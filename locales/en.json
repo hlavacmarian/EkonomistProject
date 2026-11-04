@@ -1,0 +1,288 @@
+{
+  "app": {
+    "title": "New Keynesian Model Lab",
+    "subtitle": "Demand, inflation, interest rates and expectations in the three-equation model (Woodford, Interest and Prices)",
+    "disclaimer": "<strong>A teaching model, not a forecast.</strong> Textbook calibration (β = 0.99, σ = 1, κ = 0.1, φ<sub>π</sub> = 1.5, φ<sub>x</sub> = 0.125). The numbers illustrate mechanisms; they do not describe the Czech or any other real economy.",
+    "langSwitch": "CZ",
+    "langSwitchTitle": "Přepnout do češtiny",
+    "tabLab": "Shock lab",
+    "quarter": "quarters",
+    "quarterShort": "Q{t}",
+    "quarterTitle": "Quarter {t} after the shock"
+  },
+  "sections": {
+    "scenario": "Scenario",
+    "expectations": "Expectations",
+    "shock": "Shock",
+    "scenarioControls": "Scenario settings",
+    "model": "Economy",
+    "policy": "Central bank",
+    "advanced": "Advanced: expectations",
+    "equations": "Model equations",
+    "explain": "What is happening and why",
+    "numbers": "Key numbers",
+    "pins": "Pinned runs"
+  },
+  "buttons": {
+    "reset": "Reset to defaults",
+    "resetTitle": "Return all parameters and the scenario to their default values",
+    "pin": "Pin current run",
+    "pinTitle": "Keep the current curves so you can compare them with another setting",
+    "clearPins": "Clear pinned",
+    "unpin": "Unpin",
+    "info": "What does this mean?",
+    "tryHall": "Try σ = 0.2",
+    "tryDiscount": "Try m = 0.85",
+    "fixDeterminacy": "Set φ<sub>π</sub> = 1.5"
+  },
+  "modes": {
+    "rational": "Rational",
+    "hybrid": "Hybrid",
+    "both": "Both (compare)",
+    "tip": "<b>Rational expectations:</b> people know the model and the bank's rule and correctly foresee the future (absent further shocks). <b>Hybrid/adaptive:</b> expectations are formed from the past, E<sub>t</sub>x<sub>t+1</sub> = x<sub>t−1</sub> and E<sub>t</sub>π<sub>t+1</sub> = w·π* + (1 − w)·π<sub>t−1</sub>. <b>Both:</b> the same scenario in both regimes, in one chart."
+  },
+  "shock": {
+    "kind": "Shock type",
+    "kinds": {
+      "rn": "Demand (natural rate rⁿ)",
+      "u": "Cost-push (u)",
+      "v": "Monetary (v)"
+    },
+    "size": "Shock size",
+    "sizeUnit": "p.p. p.a.",
+    "sizeTip": {
+      "rn": "By how many percentage points (annualized) the natural real rate rⁿ moves: the rate at which demand would exactly match potential. Negative = demand slump (people want to save more, firms invest less).",
+      "u": "By how many percentage points (annualized) the cost-push shock directly raises inflation in the NKPC, even without overheated demand. Positive = pricier energy or materials, higher markups.",
+      "v": "By how many percentage points (annualized) the bank sets its rate above what the rule implies. Positive = an unexpected tightening."
+    },
+    "rho": "Persistence ρ",
+    "rhoTip": "How long the shock lasts: each quarter a fraction ρ of last quarter's size remains. ρ = 0.8 is a half-life of about 3 quarters, ρ = 0.95 about 13 quarters. A persistent shock moves expectations more, so its immediate impact is larger.",
+    "shape": "Path",
+    "shapes": {
+      "ar1": "Gradually fading (AR(1))",
+      "step": "Temporary step (fixed length)"
+    },
+    "shapeTip": "AR(1): the shock hits fully and fades geometrically. Step: the shock lasts exactly N quarters and then disappears, and everyone knows this in advance (perfect foresight). A step is needed for forward guidance (\"after the shock ends\").",
+    "duration": "Step duration",
+    "durationUnit": "qtrs",
+    "horizon": "Displayed horizon",
+    "horizonUnit": "qtrs",
+    "horizonTip": "How many quarters after the shock to display. The rational solution is computed over a longer horizon (at least 60 quarters) so that the terminal condition does not affect the displayed part."
+  },
+  "extras": {
+    "delay": "Policy reaction delay",
+    "delayUnit": "qtrs",
+    "delayTip": "For how many quarters after the shock the bank keeps its rate at the neutral level before following the Taylor rule. A delay means the real rate falls while inflation rises, so policy effectively eases.",
+    "fg": "Promise: keep the rate at the bound N quarters after the shock ends",
+    "fgUnit": "qtrs",
+    "fgTip": "Forward guidance: the bank commits to keep its rate at the lower bound until (end of shock + N), even if the rule would raise it earlier. In the rational regime the promise works through expectations already today. Available only for a \"step\" shock.",
+    "fgNeedsStep": "The promise is defined relative to the end of the shock, so it is only available for a \"Temporary step\" shock."
+  },
+  "params": {
+    "beta": {
+      "label": "β — discount factor",
+      "tip": "How much firms and households weigh the future (per quarter). β = 0.99 corresponds to a real rate of about 4% p.a. In the Phillips curve it sets how strongly future inflation enters today's prices."
+    },
+    "sigma": {
+      "label": "σ — interest sensitivity of demand",
+      "tip": "Intertemporal elasticity of substitution: by how many percent demand shifts when the real rate rises by 1 p.p. (per quarter). Large σ = interest rates move spending a lot. <b>Robert Hall</b> (1988) estimated from US data that this sensitivity of consumption is small, closer to 0.1–0.2 than to 1. With a small σ, interest rates (and natural-rate shocks) have a weaker effect on demand."
+    },
+    "kappa": {
+      "label": "κ — Phillips-curve slope",
+      "tip": "How strongly inflation responds to the output gap. Small κ = very sticky prices (firms reset them rarely); inflation moves little and slowly, and disinflation costs a lot of output. Large κ = more flexible prices."
+    },
+    "phiPi": {
+      "label": "φ<sub>π</sub> — rate response to inflation",
+      "tip": "By how much the bank raises the nominal rate when inflation rises by 1 p.p. <b>Taylor principle:</b> it must respond more than one-for-one (roughly φ<sub>π</sub> > 1) so that the real rate rises with inflation and restrains demand. Below that threshold the model has no unique solution."
+    },
+    "phiX": {
+      "label": "φ<sub>x</sub> — rate response to the gap",
+      "tip": "By how much the bank raises its rate (quarterly) when output is 1% above potential. 0.125 quarterly corresponds to Taylor's original coefficient of 0.5 in annualized rates."
+    },
+    "rho": {
+      "label": "ρ — shock persistence",
+      "tip": "See shock persistence."
+    },
+    "targetAnn": {
+      "label": "Inflation target π*",
+      "unit": "% p.a.",
+      "tip": "The inflation rate the bank aims for (the Czech National Bank targets 2%). In the model it only shifts the displayed levels; the equations work with deviations from target."
+    },
+    "neutralRealAnn": {
+      "label": "Neutral real rate r*",
+      "unit": "% p.a.",
+      "tip": "The steady-state real rate, with output at potential and inflation at target. Neutral nominal rate = r* + π*. The lower it is, the less room the bank has to cut before it hits the lower bound."
+    },
+    "lowerBoundAnn": {
+      "label": "Lower bound on the nominal rate",
+      "unit": "% p.a.",
+      "tip": "The bank will not cut the nominal rate below this level (people would hold cash at a zero return instead). Some banks went slightly below zero, so a negative bound is allowed."
+    },
+    "expDiscount": {
+      "label": "m — discounting of expectations",
+      "tip": "Cognitive discounting (Gabaix 2020): people perceive the distant future in a dampened way. Future output gap and inflation in the IS and NKPC are multiplied by m < 1, so promises about the distant future lose force quickly. m = 1 is the textbook model. Mitigates the forward guidance puzzle. Applies to the rational regime."
+    },
+    "anchoring": {
+      "label": "w — anchoring of expectations",
+      "tip": "Hybrid regime: weight of the inflation target in expectations, E<sub>t</sub>π<sub>t+1</sub> = w·π* + (1 − w)·π<sub>t−1</sub>. w = 1: people fully trust the target; w = 0: they expect inflation to be like last quarter's. With endogenous anchoring this is the baseline (maximum) credibility."
+    },
+    "endogenousAnchoring": {
+      "label": "Endogenous anchoring",
+      "tip": "When on, credibility w falls when inflation stays outside a band around the target for a while, and rebuilds once it returns: w<sub>t+1</sub> = w̄ · exp(−max(0, s<sub>t</sub> − band) / band), where s<sub>t</sub> is a running memory of inflation misses."
+    },
+    "anchorBand": {
+      "label": "Tolerance band",
+      "unit": "p.p.",
+      "tip": "How far from target (annualized) inflation may be on average before people start losing trust. The CNB's tolerance band is ±1 p.p."
+    },
+    "anchorMemory": {
+      "label": "Memory speed λ",
+      "tip": "How fast the latest inflation miss enters the memory s<sub>t</sub> = (1 − λ)s<sub>t−1</sub> + λ|π<sub>t</sub> − π*|. Small λ = people remember long; trust is lost and regained slowly."
+    }
+  },
+  "charts": {
+    "gap": "Output gap",
+    "gapUnit": "% of potential",
+    "inflation": "Inflation",
+    "inflationUnit": "% p.a.",
+    "nominal": "Nominal rate",
+    "nominalUnit": "% p.a.",
+    "real": "Real vs. natural rate",
+    "realUnit": "% p.a.",
+    "anchoring": "Anchoring of expectations w",
+    "anchoringUnit": "0 = no trust, 1 = full",
+    "target": "target",
+    "lowerBound": "lower bound",
+    "neutral": "r*",
+    "natural": "natural rⁿ",
+    "atBound": "shading = rate at the bound"
+  },
+  "runs": {
+    "main": "Current settings",
+    "hawk": "Hawkish bank (φπ = 3)",
+    "hall": "Hall's σ = 0.2",
+    "withPromise": "With promise (N = {n})",
+    "noPromise": "No promise",
+    "delayed": "Late reaction ({n} qtrs)",
+    "timely": "Timely reaction",
+    "mode_rational": "rational",
+    "mode_hybrid": "hybrid",
+    "pinPrefix": "Pin {n}",
+    "pinsEmpty": "Nothing yet. Pin a run, change a parameter and compare the curves.",
+    "pinsFull": "At most {n} runs can be pinned at once."
+  },
+  "status": {
+    "muc": "Solution: method of undetermined coefficients (analytic; AR(1) shock, lower bound not binding).",
+    "pf": "Solution: perfect foresight, one linear system over T = {T} quarters with terminal condition x<sub>T</sub> = π<sub>T</sub> = 0.",
+    "pfBound": "Regimes at the bound found by guess-and-verify ({iter} iterations).",
+    "forward": "Solution: stepping forward; in each quarter the IS, NKPC and the rule with the lower bound are solved simultaneously.",
+    "residual": "Substitution check: max equation residual {r}",
+    "nonconv": "Regime iteration at the bound did not converge; the result may be unreliable. Try a smaller shock or a shorter promise.",
+    "unstable": "The hybrid path is explosive: with these parameters and adaptive expectations the economy does not stabilize.",
+    "modeLabel": "{mode}: "
+  },
+  "determinacy": {
+    "title": "Rational regime: the model has no unique solution",
+    "body1": "The Taylor principle requires κ(φ<sub>π</sub> − 1) + (1 − β)φ<sub>x</sub> > 0. Its current value is <b>{v}</b>. Roughly: in response to a permanent 1 p.p. rise in inflation the bank must raise the nominal rate by more than 1 p.p. With these parameters it would need φ<sub>π</sub> > {th}.",
+    "body2": "Why the solution is not unique without it: when the bank responds weakly, higher expected inflation <em>lowers</em> the real rate i − E<sub>t</sub>π<sub>t+1</sub>. Through the IS equation that boosts demand, and through the NKPC it really raises inflation, so expectations fulfil themselves. This works for any (bounded) path of expectations, even without any shock (\"sunspots\"). The model cannot tell which of infinitely many paths will occur, so we draw none.",
+    "body3": "Technically: the system E<sub>t</sub>z<sub>t+1</sub> = A z<sub>t</sub> for z = (x, π) has two forward-looking variables, and uniqueness requires both eigenvalues of A to lie outside the unit circle. Their moduli are now {eig}.",
+    "discountNote": "With m < 1 the condition changes; the app checks it directly via the eigenvalues.",
+    "hybridNote": "The hybrid regime looks backward, so its solution is unique even here, though not necessarily stable."
+  },
+  "numbers": {
+    "run": "Run",
+    "gapExt": "Largest gap",
+    "inflExt": "Furthest from target",
+    "rateMin": "Min. rate",
+    "rateMax": "Max. rate",
+    "atBound": "Quarters at bound",
+    "loss": "Loss",
+    "lossTip": "Sum over the displayed horizon of (π − π*)² + 0.5·x², π in % p.a. Smaller = better stabilization. For comparing runs only."
+  },
+  "equations": {
+    "IS": "Demand (IS, Hall's Euler equation): today's demand = expected future demand minus σ × (real rate − natural rate).",
+    "NKPC": "Inflation (New Keynesian Phillips curve): today's inflation = discounted expected inflation + κ × gap + cost-push shock.",
+    "TR": "Central bank (Taylor rule with a lower bound).",
+    "E": "Hybrid expectations (hybrid regime only).",
+    "levels": "Variables are quarterly deviations from steady state; charts show annualized levels: π in % p.a. = 4π + π*, i in % p.a. = 4i + r* + π*. Shocks are AR(1): z<sub>t</sub> = ρz<sub>t−1</sub>."
+  },
+  "scenarios": {
+    "custom": {
+      "title": "Custom shock",
+      "short": "Choose the type, size and path of a shock and watch the economy adjust."
+    },
+    "oil": {
+      "title": "1 · Oil/energy shock",
+      "short": "A cost-push shock: pricier energy raises inflation and lowers output at the same time. The bank has to trade inflation against output.",
+      "explain": [
+        "More expensive energy lowers <b>potential</b> output: the same inputs produce less. In this model it shows up as a cost-push shock u in the [[NKPC]]: firms pass higher costs into prices even though demand is not overheated. (More precisely, u captures the part of the shock by which flexible-price output and efficient output diverge. That divergence is what creates the dilemma.)",
+        "<b>The bank's dilemma.</b> The rule [[TR]] with φ<sub>π</sub> > 1 raises the real rate. Through the [[IS]] that pushes demand below potential (x < 0), and through the κx term in the [[NKPC]] it restrains inflation. Lower inflation is bought with lost output. A cost-push shock breaks the \"divine coincidence\": no interest rate stabilizes inflation and the gap at the same time.",
+        "Dashed: a <b>hawkish bank</b> (φ<sub>π</sub> = 3). Inflation returns faster and the output loss is deeper. Also try φ<sub>π</sub> around 1.1: a soft bank keeps inflation high for long but spares output.",
+        "Expectations matter too: inflation in the [[NKPC]] depends on E<sub>t</sub>π<sub>t+1</sub>, so a credible commitment to bring inflation back to target dampens it already today. In the hybrid regime high inflation carries over into the following quarters (switch to \"Both\")."
+      ]
+    },
+    "pandemic": {
+      "title": "2 · Demand collapse (pandemic-type)",
+      "short": "A fall in the natural rate: people want to spend less and save more, firms postpone investment.",
+      "explain": [
+        "Households spend less (caution, closed services) and firms postpone investment. In the model this is a fall in the <b>natural rate</b> rⁿ: the real rate that would keep demand at potential (grey line, bottom right).",
+        "[[IS]]: the gap falls as long as the actual real rate is above rⁿ. Iterating forward, x<sub>t</sub> = −σ Σ<sub>k</sub> (r<sub>t+k</sub> − rⁿ<sub>t+k</sub>): today's demand depends on the whole expected path of real rates, not just today's.",
+        "Following the [[TR]], the bank cuts its rate, but it reacts only to the fall in inflation and output that has already happened, not to rⁿ directly. The real rate therefore tracks rⁿ only partly and the gap stays negative. If the bank moved its rate exactly with rⁿ, it would stabilize inflation and output at once (\"divine coincidence\").",
+        "[[NKPC]]: a negative gap lowers marginal costs and firms raise prices less, so inflation falls below target. With a demand shock inflation and output move in the same direction, so the bank faces no dilemma.",
+        "Dashed: <b>Hall's calibration σ = 0.2</b>. Robert Hall estimated that consumption responds only weakly to the interest rate. With σ = 0.2 both the fall in rⁿ and the bank's response work more weakly through the term σ(r − rⁿ): output moves less, but the bank would need much larger rate moves to influence demand.",
+        "A bigger collapse (try −4 p.p.) pushes the rate to the lower bound. That is scenario 3."
+      ]
+    },
+    "zlb": {
+      "title": "3 · Zero lower bound + forward guidance",
+      "short": "A large demand collapse; the rate hits the bound. Does a promise to keep it there after the shock ends help?",
+      "explain": [
+        "The natural rate drops by 5 p.p. for 6 quarters (to −4% p.a.). The rule [[TR]] would want the nominal rate far below zero, but it cannot go below the lower bound. The real rate i − E<sub>t</sub>π<sub>t+1</sub> therefore stays above rⁿ and the [[IS]] sends the economy into a deep recession. Falling expected inflation even <em>raises</em> the real rate at the bound: a deflationary spiral.",
+        "<b>Forward guidance:</b> the bank promises to keep the rate at the bound for N more quarters after the shock ends. Why this works is visible in the [[IS]] iterated forward, x<sub>t</sub> = −σ Σ<sub>k</sub> (i<sub>t+k</sub> − π<sub>t+k+1</sub> − rⁿ<sub>t+k</sub>): lower future rates and higher future inflation lower the whole path of real rates, so demand rises already today. The [[NKPC]] adds higher expected inflation, which pushes the real rate at the bound down further.",
+        "<b>The forward guidance puzzle.</b> In this model promises are unrealistically powerful. The sum in the [[IS]] has no dampening at all: a promise to cut rates in 5 years moves today's demand as much as a cut today, and the [[NKPC]] adds the whole future boom into today's inflation. Try N = 2 and 4: a few extra quarters of promise turn a deep recession into a boom with high inflation. Empirically, the effects of promises are much smaller (Del Negro, Giannoni and Patterson 2012).",
+        "<b>Mitigation:</b> the parameter m (discounting of expectations) in the Advanced section. With m < 1 people perceive the distant future in a dampened way (Gabaix 2020; similarly McKay, Nakamura and Steinsson 2016). In the [[IS]] and [[NKPC]], E<sub>t</sub>x<sub>t+1</sub> and βE<sub>t</sub>π<sub>t+1</sub> are multiplied by m, so the effect of a promise fades geometrically with its horizon. Try m = 0.85.",
+        "In the hybrid regime promises do not work through expectations at all, because adaptive expectations only look at the past. What remains is the direct effect of the rate staying low for longer."
+      ]
+    },
+    "deanchor": {
+      "title": "4 · De-anchoring of expectations",
+      "short": "A cost-push shock, the bank reacts late, and people stop trusting the inflation target.",
+      "explain": [
+        "Hybrid regime: inflation expectations are a weighted average of the target and past inflation [[E]]. The weight w is <b>anchoring</b>, the trust in the target. Endogenous anchoring is on: when inflation stays outside a band around the target for a while, w falls (bottom chart).",
+        "After the shock the bank keeps its rate at the neutral level for a few quarters. Expected inflation is rising, so the real rate i − E<sub>t</sub>π<sub>t+1</sub> <em>falls</em> and policy effectively eases. The [[IS]] therefore stimulates demand instead of restraining it.",
+        "As w falls, the [[NKPC]] carries more of last quarter's inflation into this quarter's: inflation settles in and starts feeding itself. When the bank finally reacts, it has to raise rates much more and cause a deeper recession, much like the 1970s and the Volcker disinflation.",
+        "Dashed: a <b>timely reaction</b> (no delay). Inflation returns to the band, anchoring holds and the loss is smaller. Credibility is capital that is hard to build and easy to lose.",
+        "In the rational regime (switch to \"Both\") the delay hurts too: a fixed rate while inflation rises temporarily violates the Taylor principle, the real rate falls and inflation jumps. But rational agents know the bank will step in later, so inflation does not de-anchor and falls quickly once the bank acts."
+      ]
+    }
+  },
+  "explain": {
+    "custom": {
+      "rn": [
+        "The <b>natural rate</b> rⁿ is the real rate at which demand would exactly match potential. When it falls (people want to save more, firms invest less), the prevailing real rate is suddenly too high.",
+        "[[IS]]: the output gap falls when the real rate i − E<sub>t</sub>π<sub>t+1</sub> is above rⁿ. Iterating forward, x<sub>t</sub> = −σ Σ<sub>k</sub>(r<sub>t+k</sub> − rⁿ<sub>t+k</sub>): the whole expected path of real rates matters.",
+        "[[NKPC]]: weaker demand means lower marginal costs, so firms that get to reset prices raise them less and inflation falls. Inflation is forward-looking: π<sub>t</sub> = κ Σ<sub>k</sub> β<sup>k</sup> x<sub>t+k</sub>.",
+        "[[TR]]: the bank cuts its rate, but it reacts only to π and x, not to rⁿ directly. The real rate therefore falls less than the natural rate and the gap stays negative."
+      ],
+      "u": [
+        "A <b>cost-push shock</b> u shifts the Phillips curve [[NKPC]] up: inflation rises even with a zero gap (pricier inputs, higher markups).",
+        "Following the [[TR]] the bank raises its rate by more than inflation (φ<sub>π</sub> > 1), the real rate rises and through the [[IS]] restrains demand. The negative gap then slows inflation through κx in the [[NKPC]].",
+        "The bank thus trades some inflation for lost output. With a cost-push shock you cannot stabilize both at once. Try changing φ<sub>π</sub> and comparing pinned runs."
+      ],
+      "v": [
+        "A <b>monetary shock</b> v is a deviation from the rule [[TR]]: the bank sets its rate higher than the rule implies.",
+        "Prices are sticky, so a higher nominal rate means a higher real rate. Demand falls in the [[IS]] and inflation falls in the [[NKPC]].",
+        "The rule then undoes part of the tightening by itself: lower π and x pull the rate down. Under the default calibration the nominal rate actually <em>falls</em> while the real rate rises. Policy is measured by the path of the real rate, not the nominal one."
+      ]
+    },
+    "mode": {
+      "hybrid": "<b>Hybrid regime:</b> expectations are formed from the past [[E]]. Responses are therefore slower and hump-shaped (the peak comes several quarters later) and promises about the future have no effect. The discounting parameter m does not apply in this regime.",
+      "both": "<b>Comparing regimes:</b> blue = rational expectations, orange = hybrid. The difference shows how much work expectations do in the model."
+    },
+    "note": {
+      "bound": "The rate is at the lower bound ({lb}% p.a.) in quarters {list} (shading in the nominal-rate chart). There the rule [[TR]] does not apply and only higher expected inflation can lower the real rate.",
+      "delay": "The bank reacts with a delay of {n} qtrs: until then it keeps its rate at the neutral level regardless of the [[TR]].",
+      "discount": "Discounting of expectations m = {m}: future values in the [[IS]] and [[NKPC]] are dampened."
+    }
+  }
+}

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NK Model Lab</title>
+  <meta name="description" content="Interaktivní výuková simulace tříčlenného novokeynesiánského modelu">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M5 22 C10 22 11 9 16 9 S22 20 27 14' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="src/ui/styles.css">
+  <script type="module" src="src/ui/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1 data-i18n="app.title">Laboratoř novokeynesiánského modelu</h1>
+      <p data-i18n="app.subtitle"></p>
+    </div>
+    <button id="lang" class="btn ghost" type="button" data-i18n="app.langSwitch" data-i18n-title="app.langSwitchTitle">EN</button>
+  </header>
+  <div class="disclaimer" role="note" data-i18n="app.disclaimer"></div>
+
+  <main class="layout">
+    <aside class="controls" id="controls" aria-label="Controls"></aside>
+
+    <section class="content">
+      <div class="card" id="equations"></div>
+
+      <div class="card warn" id="determinacy" hidden></div>
+
+      <div class="toolbar">
+        <div class="legend" id="legend"></div>
+        <div class="toolbar-actions">
+          <button class="btn" id="pin" type="button" data-i18n="buttons.pin" data-i18n-title="buttons.pinTitle"></button>
+          <button class="btn ghost" id="clear-pins" type="button" data-i18n="buttons.clearPins"></button>
+        </div>
+      </div>
+
+      <div class="charts" id="charts">
+        <div id="chart-gap"></div>
+        <div id="chart-inflation"></div>
+        <div id="chart-nominal"></div>
+        <div id="chart-real"></div>
+        <div id="chart-anchoring" class="wide"></div>
+      </div>
+
+      <div class="status" id="status" aria-live="polite"></div>
+
+      <div class="panels">
+        <article class="card" id="explain"></article>
+        <article class="card" id="numbers"></article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Model: Woodford (2003), <em>Interest and Prices</em>; Hall (1988); Gabaix (2020).</span>
+  </footer>
+</body>
+</html>

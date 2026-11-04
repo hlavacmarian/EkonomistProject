@@ -1,0 +1,288 @@
+{
+  "app": {
+    "title": "Laboratoř novokeynesiánského modelu",
+    "subtitle": "Poptávka, inflace, sazby a očekávání ve tříčlenném modelu (Woodford, Interest and Prices)",
+    "disclaimer": "<strong>Výukový model, ne předpověď.</strong> Učebnicová kalibrace (β = 0,99, σ = 1, κ = 0,1, φ<sub>π</sub> = 1,5, φ<sub>x</sub> = 0,125). Čísla ilustrují mechanismy, nepopisují českou ani jinou skutečnou ekonomiku.",
+    "langSwitch": "EN",
+    "langSwitchTitle": "Switch to English",
+    "tabLab": "Laboratoř šoků",
+    "quarter": "čtvrtletí",
+    "quarterShort": "Q{t}",
+    "quarterTitle": "{t}. čtvrtletí po šoku"
+  },
+  "sections": {
+    "scenario": "Scénář",
+    "expectations": "Očekávání",
+    "shock": "Šok",
+    "scenarioControls": "Nastavení scénáře",
+    "model": "Ekonomika",
+    "policy": "Centrální banka",
+    "advanced": "Pokročilé: očekávání",
+    "equations": "Rovnice modelu",
+    "explain": "Co se děje a proč",
+    "numbers": "Klíčová čísla",
+    "pins": "Připnuté běhy"
+  },
+  "buttons": {
+    "reset": "Obnovit výchozí",
+    "resetTitle": "Vrátit parametry i scénář na výchozí hodnoty",
+    "pin": "Připnout aktuální běh",
+    "pinTitle": "Uloží současné křivky, abys je mohl porovnat s dalším nastavením",
+    "clearPins": "Smazat připnuté",
+    "unpin": "Odepnout",
+    "info": "Co to znamená?",
+    "tryHall": "Vyzkoušet σ = 0,2",
+    "tryDiscount": "Vyzkoušet m = 0,85",
+    "fixDeterminacy": "Nastavit φ<sub>π</sub> = 1,5"
+  },
+  "modes": {
+    "rational": "Racionální",
+    "hybrid": "Hybridní",
+    "both": "Obě (srovnání)",
+    "tip": "<b>Racionální očekávání:</b> lidé znají model i pravidlo banky a správně předvídají budoucnost (bez dalších šoků). <b>Hybridní/adaptivní:</b> očekávání se tvoří z minulosti, E<sub>t</sub>x<sub>t+1</sub> = x<sub>t−1</sub> a E<sub>t</sub>π<sub>t+1</sub> = w·π* + (1 − w)·π<sub>t−1</sub>. <b>Obě:</b> stejný scénář v obou režimech v jednom grafu."
+  },
+  "shock": {
+    "kind": "Typ šoku",
+    "kinds": {
+      "rn": "Poptávkový (přirozená sazba rⁿ)",
+      "u": "Nákladový (u)",
+      "v": "Měnový (v)"
+    },
+    "size": "Velikost šoku",
+    "sizeUnit": "p. b. p.a.",
+    "sizeTip": {
+      "rn": "O kolik procentních bodů (anualizovaně) se změní přirozená reálná sazba rⁿ — sazba, při které by poptávka přesně odpovídala potenciálu. Záporná hodnota = propad poptávky (lidé chtějí víc spořit, firmy méně investovat).",
+      "u": "O kolik procentních bodů (anualizovaně) nákladový šok přímo zvedne inflaci v rovnici NKPC, i bez přehřáté poptávky. Kladná hodnota = dražší energie, suroviny, vyšší přirážky.",
+      "v": "O kolik procentních bodů (anualizovaně) banka nastaví sazbu nad úroveň danou pravidlem. Kladná hodnota = neočekávané zpřísnění."
+    },
+    "rho": "Perzistence ρ",
+    "rhoTip": "Jak dlouho šok vydrží: každé čtvrtletí zbude ρ-násobek minulé velikosti. ρ = 0,8 znamená poločas asi 3 čtvrtletí, ρ = 0,95 asi 13 čtvrtletí. Perzistentní šok mění očekávání víc, a proto má větší okamžitý dopad.",
+    "shape": "Průběh",
+    "shapes": {
+      "ar1": "Postupně odeznívá (AR(1))",
+      "step": "Dočasný schod (pevná délka)"
+    },
+    "shapeTip": "AR(1): šok udeří naplno a geometricky odeznívá. Schod: šok trvá přesně N čtvrtletí a pak zmizí — všichni to vědí předem (dokonalé předvídání). Schod je potřeba pro forward guidance („po skončení šoku“).",
+    "duration": "Trvání schodu",
+    "durationUnit": "čtv.",
+    "horizon": "Zobrazený horizont",
+    "horizonUnit": "čtv.",
+    "horizonTip": "Kolik čtvrtletí po šoku zobrazit. Racionální řešení se počítá na delším horizontu (aspoň 60 čtvrtletí), aby terminální podmínka neovlivnila zobrazenou část."
+  },
+  "extras": {
+    "delay": "Zpoždění reakce banky",
+    "delayUnit": "čtv.",
+    "delayTip": "Kolik čtvrtletí po šoku banka nechá sazbu na neutrální úrovni, než začne jednat podle Taylorova pravidla. Zpoždění znamená, že reálná sazba při rostoucí inflaci klesá — politika se fakticky uvolňuje.",
+    "fg": "Slib: sazba na mezi ještě N čtvrtletí po skončení šoku",
+    "fgUnit": "čtv.",
+    "fgTip": "Forward guidance: banka se zaváže držet sazbu na dolní mezi až do čtvrtletí (konec šoku + N), i když by ji pravidlo zvedlo dřív. V racionálním režimu slib působí přes očekávání už dnes. Funguje jen pro šok typu „schod“.",
+    "fgNeedsStep": "Slib se vztahuje ke konci šoku, proto je dostupný jen pro šok typu „Dočasný schod“."
+  },
+  "params": {
+    "beta": {
+      "label": "β — diskontní faktor",
+      "tip": "Jak moc firmy a domácnosti váží budoucnost (za čtvrtletí). β = 0,99 odpovídá reálné sazbě asi 4 % p.a. V Phillipsově křivce určuje, jak silně budoucí inflace vstupuje do dnešních cen."
+    },
+    "sigma": {
+      "label": "σ — citlivost poptávky na úrok",
+      "tip": "Intertemporální elasticita substituce: o kolik procent se posune poptávka, když reálná sazba vzroste o 1 p. b. (za čtvrtletí). Velká σ = sazby silně hýbou spotřebou. <b>Robert Hall</b> (1988) z amerických dat odhadl, že tato citlivost spotřeby je malá, spíš kolem 0,1–0,2 než 1. S malou σ mají sazby (i šoky přirozené sazby) na poptávku slabší vliv."
+    },
+    "kappa": {
+      "label": "κ — sklon Phillipsovy křivky",
+      "tip": "Jak silně reaguje inflace na mezeru výstupu. Malé κ = ceny jsou hodně strnulé (firmy je mění zřídka), inflace se hýbe málo a pomalu, a snížení inflace stojí hodně výkonu. Velké κ = pružnější ceny."
+    },
+    "phiPi": {
+      "label": "φ<sub>π</sub> — reakce sazby na inflaci",
+      "tip": "O kolik banka zvedne nominální sazbu, když inflace vzroste o 1 p. b. <b>Taylorův princip:</b> musí reagovat víc než 1 : 1 (zhruba φ<sub>π</sub> > 1), aby s inflací rostla i reálná sazba a brzdila poptávku. Pod touto hranicí model nemá jednoznačné řešení."
+    },
+    "phiX": {
+      "label": "φ<sub>x</sub> — reakce sazby na mezeru",
+      "tip": "O kolik banka zvedne sazbu (čtvrtletně), když je výkon o 1 % nad potenciálem. 0,125 čtvrtletně odpovídá Taylorovu původnímu koeficientu 0,5 v anualizovaných sazbách."
+    },
+    "rho": {
+      "label": "ρ — perzistence šoku",
+      "tip": "Viz perzistence šoku."
+    },
+    "targetAnn": {
+      "label": "Inflační cíl π*",
+      "unit": "% p.a.",
+      "tip": "Inflace, ke které banka směřuje (ČNB má cíl 2 %). V modelu jen posouvá zobrazené úrovně — rovnice pracují s odchylkami od cíle."
+    },
+    "neutralRealAnn": {
+      "label": "Neutrální reálná sazba r*",
+      "unit": "% p.a.",
+      "tip": "Reálná sazba v ustáleném stavu, kdy je výkon na potenciálu a inflace na cíli. Neutrální nominální sazba = r* + π*. Čím je nižší, tím menší má banka prostor sazby snížit, než narazí na dolní mez."
+    },
+    "lowerBoundAnn": {
+      "label": "Dolní mez nominální sazby",
+      "unit": "% p.a.",
+      "tip": "Pod tuto úroveň banka nominální sazbu nesníží (lidé by drželi hotovost s nulovým výnosem). Některé banky šly mírně pod nulu, proto lze nastavit i zápornou mez."
+    },
+    "expDiscount": {
+      "label": "m — diskontování očekávání",
+      "tip": "Kognitivní diskontování (Gabaix 2020): lidé vnímají vzdálenou budoucnost tlumeně. Budoucí mezera a inflace v IS a NKPC se násobí m < 1, takže vliv slibů o vzdálené budoucnosti rychle slábne. m = 1 je učebnicový model. Zmírňuje hádanku forward guidance. Platí pro racionální režim."
+    },
+    "anchoring": {
+      "label": "w — ukotvení očekávání",
+      "tip": "Hybridní režim: váha inflačního cíle v očekáváních, E<sub>t</sub>π<sub>t+1</sub> = w·π* + (1 − w)·π<sub>t−1</sub>. w = 1: lidé cíli plně věří; w = 0: čekají, že inflace bude jako loni. Při endogenním ukotvení je to výchozí (maximální) důvěra."
+    },
+    "endogenousAnchoring": {
+      "label": "Endogenní ukotvení",
+      "tip": "Je-li zapnuto, důvěra w klesá, když se inflace dlouho drží mimo pásmo kolem cíle, a obnovuje se, když se vrátí: w<sub>t+1</sub> = w̄ · exp(−max(0, s<sub>t</sub> − pásmo) / pásmo), kde s<sub>t</sub> je klouzavá paměť odchylek inflace od cíle."
+    },
+    "anchorBand": {
+      "label": "Tolerované pásmo",
+      "unit": "p. b.",
+      "tip": "Jak daleko od cíle (anualizovaně) může inflace v průměru být, než lidé začnou ztrácet důvěru. ČNB má pásmo tolerance ±1 p. b."
+    },
+    "anchorMemory": {
+      "label": "Rychlost paměti λ",
+      "tip": "Jak rychle se poslední odchylka inflace propíše do paměti s<sub>t</sub> = (1 − λ)s<sub>t−1</sub> + λ|π<sub>t</sub> − π*|. Malé λ = lidé si pamatují dlouho, ztrácejí i získávají důvěru pomalu."
+    }
+  },
+  "charts": {
+    "gap": "Mezera výstupu",
+    "gapUnit": "% potenciálu",
+    "inflation": "Inflace",
+    "inflationUnit": "% p.a.",
+    "nominal": "Nominální sazba",
+    "nominalUnit": "% p.a.",
+    "real": "Reálná vs. přirozená sazba",
+    "realUnit": "% p.a.",
+    "anchoring": "Ukotvení očekávání w",
+    "anchoringUnit": "0 = žádná důvěra, 1 = plná",
+    "target": "cíl",
+    "lowerBound": "dolní mez",
+    "neutral": "r*",
+    "natural": "přirozená rⁿ",
+    "atBound": "stínování = sazba na mezi"
+  },
+  "runs": {
+    "main": "Aktuální nastavení",
+    "hawk": "Jestřábí banka (φπ = 3)",
+    "hall": "Hallova σ = 0,2",
+    "withPromise": "Se slibem (N = {n})",
+    "noPromise": "Bez slibu",
+    "delayed": "Pozdní reakce ({n} čtv.)",
+    "timely": "Včasná reakce",
+    "mode_rational": "racionální",
+    "mode_hybrid": "hybridní",
+    "pinPrefix": "Připnuto {n}",
+    "pinsEmpty": "Zatím nic. Připni běh, změň parametr a porovnej křivky.",
+    "pinsFull": "Najednou lze připnout nejvýš {n} běhů."
+  },
+  "status": {
+    "muc": "Řešení: metoda neurčitých koeficientů (analyticky; AR(1) šok, dolní mez neváže).",
+    "pf": "Řešení: dokonalé předvídání — jeden lineární systém přes T = {T} čtvrtletí s terminální podmínkou x<sub>T</sub> = π<sub>T</sub> = 0.",
+    "pfBound": "Režimy na mezi nalezeny iterací guess-and-verify (počet iterací: {iter}).",
+    "forward": "Řešení: krokování vpřed; v každém čtvrtletí se současně řeší IS, NKPC a pravidlo s dolní mezí.",
+    "residual": "Kontrola dosazením: max. reziduum rovnic {r}",
+    "nonconv": "Iterace režimů na mezi nekonvergovala — výsledek může být nespolehlivý. Zkus menší šok nebo kratší slib.",
+    "unstable": "Hybridní dráha je explozivní: s těmito parametry a adaptivními očekáváními se ekonomika nestabilizuje.",
+    "modeLabel": "{mode}: "
+  },
+  "determinacy": {
+    "title": "Racionální režim: model nemá jednoznačné řešení",
+    "body1": "Taylorův princip vyžaduje κ(φ<sub>π</sub> − 1) + (1 − β)φ<sub>x</sub> > 0. Teď je tato hodnota <b>{v}</b>. Zhruba řečeno: banka musí na trvalé zvýšení inflace o 1 p. b. zvednout nominální sazbu o víc než 1 p. b. S těmito parametry by k tomu potřebovala φ<sub>π</sub> > {th}.",
+    "body2": "Proč bez toho řešení není jednoznačné: když banka reaguje slabě, vyšší očekávaná inflace <em>sníží</em> reálnou sazbu i − E<sub>t</sub>π<sub>t+1</sub>. To přes rovnici IS povzbudí poptávku a přes NKPC skutečně zvýší inflaci — očekávání se sama naplní. Funguje to pro libovolnou (ohraničenou) cestu očekávání, i bez jakéhokoli šoku („sunspots“). Model tedy neumí říct, která z nekonečně mnoha cest nastane, a proto žádnou nekreslíme.",
+    "body3": "Technicky: soustava E<sub>t</sub>z<sub>t+1</sub> = A z<sub>t</sub> pro z = (x, π) má dvě dopředu hledící proměnné, a jednoznačnost vyžaduje, aby obě vlastní čísla A ležela mimo jednotkový kruh. Teď mají absolutní hodnoty {eig}.",
+    "discountNote": "Při m < 1 se podmínka mění; aplikace ji ověřuje přímo přes vlastní čísla.",
+    "hybridNote": "Hybridní režim se dívá do minulosti, takže řešení je jednoznačné i tady — jen nemusí být stabilní."
+  },
+  "numbers": {
+    "run": "Běh",
+    "gapExt": "Největší mezera",
+    "inflExt": "Nejdál od cíle",
+    "rateMin": "Min. sazba",
+    "rateMax": "Max. sazba",
+    "atBound": "Čtvrtletí na mezi",
+    "loss": "Ztráta",
+    "lossTip": "Součet přes zobrazený horizont: (π − π*)² + 0,5·x², π v % p.a. Menší = lepší stabilizace. Jen pro srovnání běhů."
+  },
+  "equations": {
+    "IS": "Poptávka (IS, Hallova Eulerova rovnice): dnešní poptávka = očekávaná budoucí poptávka minus σ × (reálná sazba − přirozená sazba).",
+    "NKPC": "Inflace (novokeynesiánská Phillipsova křivka): dnešní inflace = diskontovaná očekávaná inflace + κ × mezera + nákladový šok.",
+    "TR": "Centrální banka (Taylorovo pravidlo s dolní mezí).",
+    "E": "Hybridní očekávání (jen v hybridním režimu).",
+    "levels": "Proměnné jsou čtvrtletní odchylky od ustáleného stavu; grafy ukazují anualizované úrovně: π v % p.a. = 4π + π*, i v % p.a. = 4i + r* + π*. Šoky jsou AR(1): z<sub>t</sub> = ρz<sub>t−1</sub>."
+  },
+  "scenarios": {
+    "custom": {
+      "title": "Vlastní šok",
+      "short": "Zvol typ, velikost a průběh šoku a sleduj, jak se ekonomika přizpůsobí."
+    },
+    "oil": {
+      "title": "1 · Ropný/energetický šok",
+      "short": "Nákladový šok: dražší energie zvedá inflaci a zároveň ubírá výkon. Banka volí mezi inflací a výkonem.",
+      "explain": [
+        "Dražší energie snižuje <b>potenciální</b> výstup: se stejnými vstupy se dá vyrobit méně. V tomto modelu se to projeví jako nákladový šok u v [[NKPC]]: firmy přenášejí vyšší náklady do cen, i když poptávka není přehřátá. (Přesněji: u zachycuje tu část šoku, o kterou se rozejde výstup při pružných cenách a efektivní výstup. Právě proto vzniká dilema.)",
+        "<b>Dilema banky.</b> Pravidlo [[TR]] s φ<sub>π</sub> > 1 zvedá reálnou sazbu. Ta přes [[IS]] stlačí poptávku pod potenciál (x < 0) a přes člen κx v [[NKPC]] brzdí inflaci. Nižší inflace se tedy kupuje propadem výkonu. Nákladový šok porušuje „božskou shodu“: žádná sazba nestabilizuje inflaci i mezeru zároveň.",
+        "Čárkovaně: <b>jestřábí banka</b> (φ<sub>π</sub> = 3). Inflace se vrací rychleji, propad výkonu je hlubší. Zkus i φ<sub>π</sub> kolem 1,1: měkká banka nechá inflaci dlouho vysoko, ale ušetří výkon.",
+        "Roli hrají i očekávání: inflace v [[NKPC]] závisí na E<sub>t</sub>π<sub>t+1</sub>, takže důvěryhodný závazek vrátit inflaci k cíli ji tlumí už dnes. V hybridním režimu se vysoká inflace propisuje do dalších čtvrtletí (přepni na „Obě“)."
+      ]
+    },
+    "pandemic": {
+      "title": "2 · Propad poptávky (typ pandemie)",
+      "short": "Pokles přirozené sazby: lidé chtějí méně utrácet a víc spořit, firmy odkládají investice.",
+      "explain": [
+        "Domácnosti utrácejí méně (opatrnost, zavřené služby), firmy odkládají investice. V modelu to znamená pokles <b>přirozené sazby</b> rⁿ, tedy reálné sazby, která by udržela poptávku na potenciálu (šedá čára vpravo dole).",
+        "[[IS]]: mezera klesá, dokud je skutečná reálná sazba nad rⁿ. Iterováním dopředu x<sub>t</sub> = −σ Σ<sub>k</sub> (r<sub>t+k</sub> − rⁿ<sub>t+k</sub>): dnešní poptávka závisí na celé očekávané cestě reálných sazeb, ne jen na dnešní.",
+        "Banka podle [[TR]] snižuje sazbu, ale reaguje jen na už nastalý pokles inflace a výkonu, ne přímo na rⁿ. Reálná sazba proto sleduje rⁿ jen zčásti a mezera zůstává záporná. Kdyby banka posunula sazbu přesně s rⁿ, ustálila by inflaci i výkon zároveň („božská shoda“).",
+        "[[NKPC]]: záporná mezera snižuje mezní náklady a firmy zdražují méně, takže inflace klesá pod cíl. U poptávkového šoku se inflace a výkon hýbou stejným směrem, banka tedy nemá dilema.",
+        "Čárkovaně: <b>Hallova kalibrace σ = 0,2</b>. Robert Hall odhadl, že spotřeba na úrokovou sazbu reaguje jen málo. Se σ = 0,2 působí přes člen σ(r − rⁿ) slaběji jak propad rⁿ, tak reakce banky: výkyv výkonu je menší, ale banka by musela sazbou hýbat mnohem víc, aby poptávku ovlivnila.",
+        "Větší propad (zkus −4 p. b.) stlačí sazbu na dolní mez. To je scénář 3."
+      ]
+    },
+    "zlb": {
+      "title": "3 · Nulová mez + forward guidance",
+      "short": "Velký propad poptávky, sazba narazí na mez. Pomůže slib držet ji na mezi i po skončení šoku?",
+      "explain": [
+        "Přirozená sazba spadne na 6 čtvrtletí o 5 p. b. (na −4 % p.a.). Pravidlo [[TR]] by chtělo nominální sazbu hluboko pod nulou, ta ale pod dolní mez klesnout nesmí. Reálná sazba i − E<sub>t</sub>π<sub>t+1</sub> proto zůstává nad rⁿ a [[IS]] posílá ekonomiku do hluboké recese. Klesající očekávaná inflace reálnou sazbu na mezi ještě <em>zvyšuje</em>: deflační spirála.",
+        "<b>Forward guidance:</b> banka slíbí držet sazbu na mezi ještě N čtvrtletí po skončení šoku. Proč to funguje, ukazuje [[IS]] iterovaná dopředu, x<sub>t</sub> = −σ Σ<sub>k</sub> (i<sub>t+k</sub> − π<sub>t+k+1</sub> − rⁿ<sub>t+k</sub>): nižší budoucí sazby a vyšší budoucí inflace snižují celou cestu reálných sazeb, takže poptávka roste už dnes. [[NKPC]] přidá vyšší očekávanou inflaci, která reálnou sazbu na mezi dál stlačí.",
+        "<b>Hádanka forward guidance.</b> V tomto modelu působí sliby nerealisticky silně. Součet v [[IS]] nemá žádné tlumení: slib snížit sazbu za 5 let hýbe dnešní poptávkou stejně jako snížení dnes, a [[NKPC]] k tomu sečte celý budoucí boom do dnešní inflace. Zkus N = 2 a 4: pár čtvrtletí slibu navíc otočí hlubokou recesi v boom s vysokou inflací. Empiricky jsou účinky slibů mnohem menší (Del Negro, Giannoni a Patterson 2012).",
+        "<b>Zmírnění:</b> parametr m (diskontování očekávání) v sekci Pokročilé. S m < 1 lidé vzdálenou budoucnost vnímají tlumeně (Gabaix 2020; podobně McKay, Nakamura a Steinsson 2016). V [[IS]] a [[NKPC]] se E<sub>t</sub>x<sub>t+1</sub> a βE<sub>t</sub>π<sub>t+1</sub> násobí m, takže vliv slibu s rostoucím horizontem geometricky slábne. Zkus m = 0,85.",
+        "V hybridním režimu sliby přes očekávání nepůsobí vůbec, protože adaptivní očekávání se dívají jen do minulosti. Zbývá jen přímý efekt toho, že sazba zůstane nízko déle."
+      ]
+    },
+    "deanchor": {
+      "title": "4 · Odkotvení očekávání",
+      "short": "Nákladový šok, banka reaguje pozdě a lidé přestávají věřit inflačnímu cíli.",
+      "explain": [
+        "Hybridní režim: inflační očekávání jsou vážený průměr cíle a minulé inflace [[E]]. Váha w je <b>ukotvení</b>, tedy důvěra v cíl. Je zapnuté endogenní ukotvení: když se inflace dlouho drží mimo pásmo kolem cíle, w klesá (spodní graf).",
+        "Banka po šoku několik čtvrtletí nechává sazbu na neutrální úrovni. Očekávaná inflace přitom roste, takže reálná sazba i − E<sub>t</sub>π<sub>t+1</sub> <em>klesá</em> a politika se fakticky uvolňuje. [[IS]] tak poptávku povzbudí místo utlumení.",
+        "Jak w klesá, [[NKPC]] přenáší do letošní inflace víc z loňské: inflace se zabydlí a začne sama sebe živit. Když banka konečně zareaguje, musí sazby zvednout mnohem víc a vyvolat hlubší recesi. Obdoba 70. let a Volckerovy dezinflace.",
+        "Čárkovaně: <b>včasná reakce</b> (bez zpoždění). Inflace se vrátí do pásma, ukotvení vydrží a ztráta je menší. Důvěryhodnost je kapitál, který se těžko buduje a snadno ztrácí.",
+        "V racionálním režimu (přepni na „Obě“) zpoždění také škodí: pevná sazba při rostoucí inflaci dočasně porušuje Taylorův princip, reálná sazba klesá a inflace vyskočí. Racionální agenti ale vědí, že banka později zasáhne, takže se inflace neodkotví a po zásahu rychle klesá."
+      ]
+    }
+  },
+  "explain": {
+    "custom": {
+      "rn": [
+        "<b>Přirozená sazba</b> rⁿ je reálná sazba, při které by poptávka přesně odpovídala potenciálu. Když klesne (lidé chtějí víc spořit, firmy méně investovat), stávající reálná sazba je najednou příliš vysoká.",
+        "[[IS]]: mezera výstupu klesá, když je reálná sazba i − E<sub>t</sub>π<sub>t+1</sub> nad rⁿ. Iterováním dopředu x<sub>t</sub> = −σ Σ<sub>k</sub>(r<sub>t+k</sub> − rⁿ<sub>t+k</sub>): rozhoduje celá očekávaná cesta reálných sazeb.",
+        "[[NKPC]]: slabší poptávka znamená nižší mezní náklady, takže firmy, které smějí měnit ceny, zdražují méně a inflace klesá. Inflace hledí dopředu: π<sub>t</sub> = κ Σ<sub>k</sub> β<sup>k</sup> x<sub>t+k</sub>.",
+        "[[TR]]: banka snižuje sazbu, ale reaguje jen na π a x, ne přímo na rⁿ. Reálná sazba proto klesá méně než přirozená a mezera zůstává záporná."
+      ],
+      "u": [
+        "<b>Nákladový šok</b> u posouvá Phillipsovu křivku [[NKPC]] nahoru: inflace roste i při nulové mezeře (dražší vstupy, vyšší přirážky).",
+        "Banka podle [[TR]] zvedá sazbu víc než inflaci (φ<sub>π</sub> > 1), reálná sazba roste a přes [[IS]] tlumí poptávku. Záporná mezera pak přes κx v [[NKPC]] inflaci brzdí.",
+        "Banka tak vyměňuje část inflace za pokles výkonu. U nákladového šoku nelze stabilizovat obojí zároveň. Zkus měnit φ<sub>π</sub> a porovnat připnuté běhy."
+      ],
+      "v": [
+        "<b>Měnový šok</b> v je odchylka od pravidla [[TR]]: banka nastaví sazbu výš, než by pravidlo velelo.",
+        "Ceny jsou strnulé, takže vyšší nominální sazba znamená vyšší reálnou sazbu. Poptávka podle [[IS]] klesá a inflace podle [[NKPC]] klesá také.",
+        "Pravidlo pak část zpřísnění samo vrací: nižší π a x stahují sazbu dolů. Při výchozí kalibraci proto nominální sazba dokonce <em>klesne</em>, zatímco reálná sazba roste. Politiku měří cesta reálné sazby, ne nominální."
+      ]
+    },
+    "mode": {
+      "hybrid": "<b>Hybridní režim:</b> očekávání se tvoří z minulosti [[E]]. Reakce jsou proto pomalejší a hrbovité (vrchol nastává až po několika čtvrtletích) a sliby o budoucnosti nepůsobí. Diskontování m se v tomto režimu neuplatní.",
+      "both": "<b>Srovnání režimů:</b> modrá = racionální očekávání, oranžová = hybridní. Rozdíl ukazuje, kolik práce v modelu dělají očekávání."
+    },
+    "note": {
+      "bound": "Sazba je na dolní mezi ({lb} % p.a.) ve čtvrtletích {list} (stínování v grafu nominální sazby). Tam pravidlo [[TR]] neplatí a reálnou sazbu může snížit jen vyšší očekávaná inflace.",
+      "delay": "Banka reaguje se zpožděním {n} čtv.: do té doby drží sazbu na neutrální úrovni bez ohledu na [[TR]].",
+      "discount": "Diskontování očekávání m = {m}: budoucí hodnoty v [[IS]] a [[NKPC]] jsou tlumené."
+    }
+  }
+}
