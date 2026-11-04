@@ -284,5 +284,278 @@
       "delay": "Banka reaguje se zpožděním {n} čtv.: do té doby drží sazbu na neutrální úrovni bez ohledu na [[TR]].",
       "discount": "Diskontování očekávání m = {m}: budoucí hodnoty v [[IS]] a [[NKPC]] jsou tlumené."
     }
+  },
+  "tabs": {
+    "aria": "Části aplikace",
+    "lab": "Laboratoř šoků",
+    "game": "Hra Buď ČNB"
+  },
+  "timeline": {
+    "play": "Přehrát",
+    "pause": "Pozastavit",
+    "back": "O čtvrtletí zpět",
+    "forward": "O čtvrtletí vpřed",
+    "start": "Na začátek",
+    "slider": "Čtvrtletí na časové ose"
+  },
+  "live": {
+    "title": "Živý diagram: kdo koho ovlivňuje",
+    "run": "Diagram ukazuje",
+    "intro": {
+      "rational": "Šipka ukazuje, kolik jeden člen rovnice přispívá k proměnné, do které míří, ve zvoleném čtvrtletí. Šipky do uzlu se sečtou přesně na jeho hodnotu: poptávka podle [[IS]], inflace podle [[NKPC]], sazba podle [[TR]]. V racionálním režimu očekávání hledí dopředu: E<sub>t</sub>x<sub>t+1</sub> a E<sub>t</sub>π<sub>t+1</sub> jsou hodnoty z příštího čtvrtletí, takže budoucnost působí už dnes. Časovou osu nahoře lze přehrát, krokovat nebo posouvat; najetí na graf ji posune také.",
+      "hybrid": "Šipka ukazuje, kolik jeden člen rovnice přispívá k proměnné, do které míří, ve zvoleném čtvrtletí. Šipky do uzlu se sečtou přesně na jeho hodnotu: poptávka podle [[IS]], inflace podle [[NKPC]], sazba podle [[TR]]. V hybridním režimu se očekávání tvoří z minulosti [[E]]: E<sub>t</sub>x<sub>t+1</sub> = x<sub>t−1</sub> a E<sub>t</sub>π<sub>t+1</sub> = (1 − w)·π<sub>t−1</sub> (v odchylkách od cíle), proto reakce přicházejí se zpožděním. Časovou osu lze přehrát, krokovat nebo posouvat; najetí na graf ji posune také."
+    },
+    "legendUp": "zvyšuje proměnnou, do které míří",
+    "legendDown": "snižuje ji",
+    "legendInfo": {
+      "rational": "odkud se berou očekávání (z budoucnosti, t+1)",
+      "hybrid": "odkud se berou očekávání (z minulosti, t−1)"
+    },
+    "legendWidth": "Tloušťka šipky a rychlost pulzování odpovídají velikosti příspěvku, se stejným měřítkem pro celé období. Mezera je v % potenciálu, inflace a sazba v p. b. p.a. vůči cíli a vůči neutrální sazbě.",
+    "aria": "Diagram vztahů mezi očekáváními, poptávkou, inflací a centrální bankou",
+    "blocks": {
+      "IS": "Poptávka",
+      "NKPC": "Inflace",
+      "TR": "Sazba"
+    },
+    "calm": "Žádný člen teď nehraje velkou roli.",
+    "driverUp": "Nejvíc ji teď zvyšuje {term} ({v}).",
+    "driverDown": "Nejvíc ji teď snižuje {term} ({v}).",
+    "bars": {
+      "IS": "Mezera výstupu (IS)",
+      "NKPC": "Inflace vůči cíli (NKPC)",
+      "TR": "Sazba vůči neutrální (TR)"
+    },
+    "totals": {
+      "IS": "mezera výstupu",
+      "NKPC": "inflace vůči cíli",
+      "TR": "sazba vůči neutrální"
+    }
+  },
+  "decomp": {
+    "terms": {
+      "IS": {
+        "expX": "očekávaná poptávka",
+        "expPi": "očekávaná inflace",
+        "rate": "nominální sazba",
+        "natural": "přirozená sazba"
+      },
+      "NKPC": {
+        "exp": "očekávaná inflace",
+        "gap": "mezera výstupu",
+        "shock": "nákladový šok"
+      },
+      "TR": {
+        "infl": "reakce na inflaci",
+        "gap": "reakce na mezeru",
+        "shock": "měnový šok",
+        "bound": "dolní mez"
+      }
+    },
+    "override": {
+      "lab": "zpoždění nebo slib",
+      "game": "odchylka od pravidla"
+    },
+    "units": {
+      "IS": "% potenciálu",
+      "NKPC": "p. b. p.a.",
+      "TR": "p. b. p.a."
+    }
+  },
+  "diagram": {
+    "nodes": {
+      "exp": "Očekávání",
+      "demand": "Poptávka",
+      "inflation": "Inflace",
+      "bank": "Centrální banka",
+      "bankShort": "Banka"
+    },
+    "nodeTips": {
+      "exp_rational": "Očekávaná mezera a inflace v příštím čtvrtletí. V racionálním režimu se rovnají skutečným hodnotám příštího čtvrtletí.",
+      "exp_hybrid": "Očekávaná mezera a inflace v příštím čtvrtletí. V hybridním režimu se tvoří z minulého čtvrtletí; w je důvěra v inflační cíl.",
+      "demand": "Mezera výstupu x: poptávka vůči potenciálu (IS).",
+      "inflation": "Inflace π v % p.a. (NKPC).",
+      "bank": "Nominální sazba i a reálná sazba i − Eπ v % p.a. (Taylorovo pravidlo s dolní mezí)."
+    },
+    "arrows": {
+      "expDemand": "m·E x + σ·E π: když lidé čekají vyšší poptávku, utrácejí už dnes; vyšší očekávaná inflace snižuje reálnou sazbu (IS).",
+      "bankDemand": "−σ·i: vyšší nominální sazba při daných očekáváních zvyšuje reálnou sazbu a brzdí poptávku (IS). Zpětná vazba od banky.",
+      "shockDemand": "σ·rⁿ: přirozená sazba, tedy poptávkový šok (IS).",
+      "expInfl": "β·m·E π: firmy, které teď mění ceny, zohledňují očekávanou inflaci (NKPC).",
+      "demandInfl": "κ·x: vyšší poptávka zvyšuje mezní náklady a firmy zdražují (NKPC).",
+      "shockInfl": "u: nákladový šok, třeba dražší energie (NKPC).",
+      "inflBank": "φπ·π: banka reaguje na inflaci (TR).",
+      "demandBank": "φx·x: banka reaguje na mezeru výstupu (TR).",
+      "shockBank": "v: měnový šok, odchylka banky od pravidla (TR).",
+      "limitBank": "Rozdíl mezi skutečnou sazbou a pravidlem: dolní mez (níž sazba nemůže), zpoždění reakce, slib (forward guidance), ve hře rozhodnutí hráče."
+    },
+    "stubs": {
+      "bound": "mez",
+      "override_lab": "mimo pravidlo",
+      "override_game": "mimo pravidlo"
+    },
+    "info": {
+      "rational": "t+1",
+      "hybrid": "t−1"
+    },
+    "infoTitle": {
+      "rational": "Racionální očekávání: lidé znají model, takže očekávají to, co v příštím čtvrtletí opravdu nastane.",
+      "hybrid": "Hybridní očekávání: odhad budoucnosti se tvoří z minulého čtvrtletí."
+    },
+    "credibility": "důvěra",
+    "real": "reálná"
+  },
+  "game": {
+    "title": "Hra Buď ČNB",
+    "lead": "Jsi bankovní rada. Každé čtvrtletí nastavíš nominální sazbu a snažíš se držet inflaci u cíle 2 % bez zbytečných výkyvů výkonu. Ekonomiku přitom zasahují náhodné šoky.",
+    "rules": [
+      "Sazbu měníš po 0,25 p. b. Pod dolní mez (0 %) jít nelze.",
+      "Data vidíš se zpožděním jednoho čtvrtletí a jsou to první odhady se šumem. Mezera výstupu se měří mnohem hůř než inflace.",
+      "Očekávání jsou hybridní [[E]]: lidé vycházejí z minulosti a cíli věří s vahou w. Důvěra roste, když se inflace drží v pásmu ±1 p. b. kolem cíle, a klesá, když uteče.",
+      "Zprávy o velkých událostech (ceny energií, propad poptávky) přicházejí hned, ale bez čísel.",
+      "Kdo nechá inflaci utéct o víc než 10 p. b. od cíle nebo mezeru výstupu za ±12 %, toho vláda odvolá a hra skončí dřív.",
+      "Během hry se žádné skóre neukazuje. Po posledním čtvrtletí přijde vyhodnocení a srovnání s autopilotem."
+    ],
+    "length": "Délka hry",
+    "qUnit": "čtv.",
+    "lengthTip": "Počet čtvrtletí, o kterých rozhoduješ (výchozí 24 = 6 let). Před nimi jsou 4 čtvrtletí historie, ve kterých banka postupovala podle Taylorova pravidla.",
+    "difficultyLabel": "Obtížnost (síla šoků)",
+    "difficulty": {
+      "easy": "Mírná",
+      "medium": "Střední",
+      "hard": "Těžká"
+    },
+    "difficultyTip": "Obtížnost násobí šoky poptávky a nákladů (mírná ×{easy}, těžká ×{hard}). Šum v datech zůstává stejný. Při těžké obtížnosti sazba častěji narazí na dolní mez a vzácně se ekonomika může propadnout do deflační pasti.",
+    "seed": "Seed (číslo hry)",
+    "seedTip": "Stejný seed dá stejnou sekvenci šoků i šumu v datech. Hru tak jde zopakovat s jinou strategií nebo poslat číslo někomu dalšímu. Výchozí 1998 je rok, kdy ČNB přešla na cílování inflace.",
+    "randomSeed": "Náhodný",
+    "start": "Začít hrát",
+    "explain": [
+      "<b>Proč hybridní očekávání.</b> Racionální očekávání v [[IS]] a [[NKPC]] předpokládají, že lidé znají pravidlo, podle kterého banka jedná. Hráč ale žádné pevné pravidlo nemá, rozhoduje čtvrtletí po čtvrtletí. Proto se očekávání ve hře tvoří z minulosti [[E]].",
+      "<b>Důvěra je kapitál.</b> Váha cíle w v očekáváních začíná na 0,6. Když se inflace drží v pásmu, roste až k 0,9; když se dlouho drží mimo, klesá. Se slabou důvěrou se loňská inflace víc přelévá do letošní [[NKPC]] a každý šok trvá déle.",
+      "<b>Poptávka se sčítá.</b> S E<sub>t</sub>x<sub>t+1</sub> = x<sub>t−1</sub> se mezera výstupu v [[IS]] mění tak dlouho, dokud je reálná sazba jinde než přirozená. Kdo nereaguje, nechává mezeru driftovat čtvrtletí za čtvrtletím.",
+      "<b>Zpožděná a zašuměná data.</b> Rozhoduješ podle minulého čtvrtletí a čísla se mohou mýlit. Kdo reaguje na každý výkyv, reaguje na šum. Kdo čeká moc dlouho, reaguje pozdě. Pravidlo [[TR]] je užitečné vodítko, ale ve hře ho nikdo neuplatňuje za tebe."
+    ],
+    "lossNote": "Ztráta = Σ [(π − π*)² + {wg}·x² + {wr}·(Δi)²] přes tvoje čtvrtletí; π a i v % p.a., x v % potenciálu, Δi je změna sazby proti minulému čtvrtletí. Menší je lepší.",
+    "qHistory": "čtvrtletí {q} (historie)",
+    "qGame": "čtvrtletí {q} z {n}",
+    "observedNote": "Grafy ukazují jen to, co banka ví: první odhady dat s chybou (směrodatná odchylka šumu: inflace {gi} p. b., mezera {gx} %). Šedý pruh je historie před tvým nástupem.",
+    "charts": {
+      "inflationSeen": "Inflace (první odhad)",
+      "gapSeen": "Mezera výstupu (první odhad)",
+      "rateYours": "Tvoje sazba",
+      "expectSeen": "Inflační očekávání (průzkum)",
+      "seen": "první odhad",
+      "yourRate": "sazba",
+      "survey": "průzkum",
+      "inflationTrue": "Inflace (skutečná)",
+      "gapTrue": "Mezera výstupu (skutečná)",
+      "seenYou": "první odhad (tvoje data)",
+      "shocks": "Šoky, které ekonomiku zasáhly",
+      "shocksUnit": "p. b. p.a.",
+      "naturalDev": "přirozená sazba rⁿ (odchylka)",
+      "cost": "nákladový šok u",
+      "histNote": "šedý pruh = historie před tvým nástupem"
+    },
+    "neutral": "neutrální",
+    "news": {
+      "rn_up": "Firmy hlásí rekordní zakázky a domácnosti utrácejí víc.",
+      "rn_down": "Firmy ruší investice a domácnosti začínají šetřit.",
+      "u_up": "Ceny energií a surovin prudce rostou.",
+      "u_down": "Ceny energií a surovin prudce klesají.",
+      "none": "Žádné zvláštní zprávy."
+    },
+    "newsTag": "Zprávy",
+    "quarterOf": "Čtvrtletí {q} z {n}",
+    "latest": "Poslední data (čtvrtletí {q}, první odhad)",
+    "data": {
+      "inflation": "Inflace",
+      "vsTarget": "({d} p. b. vůči cíli)",
+      "gap": "Mezera výstupu",
+      "expectations": "Inflační očekávání",
+      "lastRate": "Sazba minulé čtvrtletí"
+    },
+    "setRate": "Sazba pro čtvrtletí {q}",
+    "noChange": "beze změny",
+    "change": "změna {d} p. b.",
+    "atBound": "na dolní mezi",
+    "submit": "Potvrdit sazbu",
+    "submitLast": "Potvrdit a vyhodnotit",
+    "keys": "Klávesy: ↑ / ↓ mění sazbu o 0,25 p. b. (se Shiftem o 1), Enter potvrdí.",
+    "quit": "Ukončit hru",
+    "verdict": {
+      "lost": "Ekonomika se vymkla kontrole: inflace utekla daleko od cíle. Tvoje ztráta {p}, autopilot {a}.",
+      "better": "Lepší než autopilot! Tvoje ztráta {p}, autopilot {a}.",
+      "close": "Skoro jako autopilot: tvoje ztráta {p}, autopilot {a}.",
+      "worse": "Autopilot byl lepší: tvoje ztráta {p}, autopilot {a}.",
+      "muchWorse": "Autopilot byl výrazně lepší: tvoje ztráta {p}, autopilot {a}.",
+      "beatData": "Stejné pravidlo použité na stejná zašuměná data jako tvoje mělo ztrátu {d}, tvoje rozhodování tedy bylo lepší.",
+      "lostData": "Stejné pravidlo použité na stejná zašuměná data jako tvoje mělo ztrátu {d}.",
+      "firedLoss": "Za stejná čtvrtletí: tvoje ztráta {p}, autopilot {a}."
+    },
+    "findings": {
+      "late": {
+        "high": "Data ukazovala inflaci {infl} % p.a., nad tolerančním pásmem, a sazba přesto {n} čtv. zůstávala kolem {rate} %. Taylorovo pravidlo by na stejných datech nastavilo asi {rule} %. Když inflace roste a nominální sazba stojí, reálná sazba klesá: politika se fakticky uvolňovala [[IS]] a vysoká inflace se přelévala do očekávání [[E]].",
+        "low": "Data ukazovala inflaci {infl} % p.a., pod tolerančním pásmem, a sazba přesto {n} čtv. zůstávala kolem {rate} %. Pravidlo by na stejných datech nastavilo asi {rule} %. Příliš vysoká reálná sazba držela poptávku dole [[IS]] a nízká inflace podkopávala důvěru v cíl [[E]]."
+      },
+      "over": {
+        "up_inflation": "Zvýšení sazby o {move} p. b. na {rate} % šlo daleko za to, co data naznačovala (pravidlo asi {rule} %). V {at} pak inflace spadla na {value} %, pod toleranční pásmo. Sazba působí se zpožděním přes poptávku [[IS]] a [[NKPC]], takže velký skok přestřelí.",
+        "up_gap": "Zvýšení sazby o {move} p. b. na {rate} % šlo daleko za to, co data naznačovala (pravidlo asi {rule} %). V {at} pak mezera výstupu klesla na {value} %: zbytečně hluboký propad [[IS]].",
+        "down_inflation": "Snížení sazby o {move} p. b. na {rate} % šlo daleko za to, co data naznačovala (pravidlo asi {rule} %). V {at} pak inflace vyskočila na {value} %, nad toleranční pásmo [[NKPC]].",
+        "down_gap": "Snížení sazby o {move} p. b. na {rate} % šlo daleko za to, co data naznačovala (pravidlo asi {rule} %). V {at} pak mezera výstupu vystoupala na {value} %: přehřátí [[IS]]."
+      },
+      "noise": {
+        "up_gap": "Zvýšení sazby o {move} p. b. přišlo po silném údaji o mezeře výstupu ({seen} %). Skutečná mezera byla {truth} %: většinu signálu tvořil šum měření. Mezera se měří mnohem hůř než inflace, proto se vyplatí počkat na potvrzení dalšími daty.",
+        "down_gap": "Snížení sazby o {move} p. b. přišlo po slabém údaji o mezeře výstupu ({seen} %). Skutečná mezera byla {truth} %: většinu signálu tvořil šum měření. Mezera se měří mnohem hůř než inflace, proto se vyplatí počkat na potvrzení dalšími daty.",
+        "up_inflation": "Zvýšení sazby o {move} p. b. přišlo po vysokém údaji o inflaci ({seen} %). Skutečná inflace byla {truth} %: velkou část signálu tvořil šum měření. Jeden údaj ještě nedělá trend.",
+        "down_inflation": "Snížení sazby o {move} p. b. přišlo po nízkém údaji o inflaci ({seen} %). Skutečná inflace byla {truth} %: velkou část signálu tvořil šum měření. Jeden údaj ještě nedělá trend."
+      },
+      "supply": {
+        "down": "Nákladový šok zvedal inflaci (u ≈ +{cost} p. b.) a sazba přesto klesla o {cut} p. b. na {rate} %, nejspíš kvůli slabšímu výkonu (mezera v datech {gap} %). Inflace už přitom byla nad cílem ({infl} %). Nižší reálná sazba přidala poptávku a inflace v [[NKPC]] dostala další palivo. U nákladového šoku musí banka unést dočasný pokles výkonu.",
+        "credibility": "Důvěra v cíl klesla z {w0} na {w1} [[E]]."
+      }
+    },
+    "findingTitles": {
+      "late": "Pozdní reakce",
+      "over": "Přehnaná reakce",
+      "noise": "Reakce na šum",
+      "supply": "Uvolnění při nabídkovém šoku"
+    },
+    "runs": {
+      "player": "Ty",
+      "autopilot": "Autopilot (Taylorovo pravidlo)",
+      "dataRule": "Pravidlo na tvých datech"
+    },
+    "costTip": "O kolik byla tvoje ztráta v tomto a následujících {n} čtvrtletích vyšší než ztráta autopilota.",
+    "cost": "ztráta navíc +{v}",
+    "facts": {
+      "credibility": "Důvěra v cíl w: na začátku {w0}, na konci {w1}, nejníž {wmin} (autopilot na konci {wa}).",
+      "moves": "Sazba se měnila v {n} z {N} čtvrtletí, průměrně o {m} p. b. (autopilot {na}×, průměrně o {ma} p. b.).",
+      "worst": "Inflace byla nejdál od cíle v {q}: {v} % p.a."
+    },
+    "reviewTitle": "Vyhodnocení",
+    "reviewMeta": "seed {seed} · {n} čtv. · {d}",
+    "table": {
+      "run": "Běh",
+      "loss": "Ztráta",
+      "inflation": "z toho inflace",
+      "gap": "mezera",
+      "rate": "skoky sazby",
+      "inBand": "čtv. v pásmu",
+      "credibility": "důvěra na konci"
+    },
+    "autopilotNote": "Autopilot postupuje podle Taylorova pravidla modelu a vidí skutečná data aktuálního čtvrtletí, má tedy informační výhodu. Řádek „Pravidlo na tvých datech“ používá stejné pravidlo na stejná zpožděná a zašuměná data, která vidíš ty.",
+    "mistakesTitle": "Rozbor největších chyb",
+    "noMistakes": "Žádná z hlídaných chyb (pozdní reakce, přehnaná reakce, reakce na šum, uvolnění při nabídkovém šoku) nestála nic podstatného. Výborně.",
+    "rulesNote": "Rozbor generují pevná pravidla z dat hry (prahy popisuje README), ne jazykový model. Chyby jsou seřazené podle toho, kolik stály.",
+    "replay": "Hrát znovu stejný seed",
+    "newGame": "Nová hra (jiný seed)",
+    "toSetup": "Změnit nastavení",
+    "fired": {
+      "inflation": "Vláda tě v {q} odvolala: inflace vyletěla na {v} % p.a. Vyhodnocuje se jen odehraná část hry (z plánovaných {n} čtv.).",
+      "deflation": "Vláda tě v {q} odvolala: inflace spadla na {v} % p.a. a ekonomika se propadá do deflace. Vyhodnocuje se jen odehraná část hry (z plánovaných {n} čtv.).",
+      "boom": "Vláda tě v {q} odvolala: ekonomika se přehřála, mezera výstupu {v} %. Vyhodnocuje se jen odehraná část hry (z plánovaných {n} čtv.).",
+      "slump": "Vláda tě v {q} odvolala: hluboká recese, mezera výstupu {v} %. Vyhodnocuje se jen odehraná část hry (z plánovaných {n} čtv.)."
+    }
   }
 }

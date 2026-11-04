@@ -9,9 +9,10 @@ import { shockEnd } from './shocks.js';
 export * from './params.js';
 export { determinacy, taylorPrincipleValue, transitionMatrix } from './determinacy.js';
 export { solveRational, mucCoefficients } from './rational.js';
-export { solveHybrid, nextAnchoring } from './hybrid.js';
+export { solveHybrid, stepHybrid, initialHybridState, nextAnchoring } from './hybrid.js';
 export { residuals } from './check.js';
 export { shockPaths, shockEnd } from './shocks.js';
+export { decompose, decomposeDisplay, causalFlows, TERMS, DISPLAY_SCALE, FLOW_TARGET } from './decompose.js';
 
 // Solver horizon for perfect foresight: long enough that the terminal condition
 // x_T = pi_T = 0 is harmless for the displayed window.
@@ -21,6 +22,8 @@ export function solverHorizon(horizon) {
 
 // Run one scenario in one expectations mode.
 //   spec = { params, shocks, policy, horizon, forwardGuidance }
+//   shocks = list of shock specs, or ready-made paths { rn, u, v } (model units)
+//   policy = { delay, holdUntil, rates }  (see policy.js)
 //   forwardGuidance = N  -> hold the rate at the bound N quarters after the
 //                           (step) shock ends
 export function simulate(spec, mode) {

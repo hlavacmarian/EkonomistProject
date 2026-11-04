@@ -3,7 +3,7 @@
 Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Woodford, *Interest and Prices*; Hall & Woodford, Nobel 2026). Hlavní účel je, aby autor model do hloubky pochopil: jak spolu souvisí poptávka, inflace, sazby a očekávání. Vedlejší účel je hra „Buď ČNB“.
 
 - Repozitář: https://github.com/hlavacmarian/EkonomistProject (veřejný), větev `main`. Lokální kopie je v `C:\Users\Marian\Desktop\nk-lab`.
-- **Stav: fáze 1 (laboratoř šoků) je hotová**, commit `e720f94`. Další na řadě je **fáze 2**.
+- **Stav: fáze 1 (laboratoř šoků) a fáze 2 (živý diagram + hra Buď ČNB) jsou hotové.** Fáze 2 je na větvi `claude/funny-sagan-giyc11` (zatím nesloučená do `main`). Další na řadě je **fáze 3**.
 - Postup je dohodnutý ve 4 fázích. **Po každé fázi se zastav, shrň, co je hotové a jak jsi to ověřil, a počkej na pokyn.**
 - S uživatelem komunikuj česky. Kód a komentáře piš anglicky.
 - Commit nebo push dělej jen na požádání. Commity končí řádkem `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
@@ -12,7 +12,7 @@ Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Wo
 
 ```bash
 npm start   # statický server bez závislostí, http://localhost:5173/ (PORT=… mění port)
-npm test    # node --test, aktuálně 41 testů, všechny procházejí
+npm test    # node --test, aktuálně 91 testů, všechny procházejí
 ```
 
 - Čisté ES moduly, žádný build a **žádné závislosti**, Node ≥ 18. Tak to drž. Pokud bude nějaká knihovna opravdu nutná (např. WebGL ve fázi 4), načítej ji z CDN s přesnou verzí, ale nejdřív zvaž canvas 2D.
@@ -38,15 +38,27 @@ src/model/            jádro modelu (bez DOM)
   policy.js           policyOverrides: delay (sazba na neutrálu pro t < L), holdUntil (na mezi pro t < q)
   determinacy.js      taylorPrincipleValue, transitionMatrix, determinacy (vlastní čísla)
   rational.js         solveRational: neurčité koeficienty (MUC), nebo dokonalé předvídání (PF) + guess-and-verify na mezi
-  hybrid.js           solveHybrid: krokování vpřed, endogenní ukotvení (nextAnchoring)
+  hybrid.js           stepHybrid(p, state, shock, rate|null) → {x, π, i, …, state'}; solveHybrid = smyčka přes něj;
+                      initialHybridState, nextAnchoring(p, memory, w)
   check.js            residuals(sol, p): IS, NKPC, pravidlo/komplementarita, konzistence očekávání, mez
+  decompose.js        decompose / decomposeDisplay (příspěvky členů rovnic), causalFlows (šipky diagramu), TERMS
   index.js            simulate(spec, mode) = veřejné API
+src/game/             hra bez DOM: rng.js (mulberry32, gaussian), game.js (createGame, observe, submitRate,
+                      isOver, drawGame, FIRE), evaluate.js (lossBreakdown, autopilotSolution, dataRuleSolution,
+                      analyze, evaluateGame, RULES, LOSS_WEIGHTS), index.js
 src/scenarios.js      SCENARIOS (custom, oil, pandemic, zlb, deanchor), buildRuns(built, mode)
-src/ui/app.js         stav, ovládání, vykreslení, připínání, vysvětlení, tabulka čísel
-src/ui/chart.js       vlastní SVG čárový graf: createChart(el,{title,unit,onHover}) → update/setCursor/setTitle
-src/ui/i18n.js        loadLocale, t(key, vars), fmt(v, digits) (desetinná čárka v cs), applyStatic
-src/ui/styles.css     barvy jako CSS proměnné (světlý i tmavý motiv), --s1 racionální, --s2 hybridní, --s3/5/6/7 připnuté
-test/                 model.test.js, i18n.test.js
+src/ui/app.js         záložky (#lab / #game), stav, ovládání, časová osa, živý panel, připínání, vysvětlení
+src/ui/chart.js       SVG čárový graf: createChart(el,{title,unit,onHover}) → update/setCursor/setTitle;
+                      data umí points (body), hbands (pásmo), bands [a,b,třída], xLabel/tickFrom
+src/ui/bars.js        skládaný sloupcový graf příspěvků (stejné API jako chart.js)
+src/ui/diagram.js     živý kauzální diagram (SVG, kompaktní rozložení pod 540 px)
+src/ui/live.js        panel: diagram + rozklad v číslech + 3 sloupcové grafy; update({result, params, runs, context})
+src/ui/timeline.js    přehrát/krokovat/posuvník; createTimeline(el,{onChange,label,texts})
+src/ui/game.js        obrazovky hry: nastavení, tah, vyhodnocení (grafy, rozbor, živý diagram)
+src/ui/i18n.js        loadLocale, t(key, vars), fmt(v, digits) (desetinná čárka v cs), eqRefs, applyStatic
+src/ui/styles.css     barvy jako CSS proměnné (světlý i tmavý motiv), --s1 racionální/hráč, --s2 hybridní,
+                      --up/--down šipky, --c-* členy rozkladu
+test/                 model.test.js, decompose.test.js, game.test.js, i18n.test.js
 ```
 
 ### Model a konvence jednotek
@@ -61,19 +73,29 @@ test/                 model.test.js, i18n.test.js
 - **Jednotky:** čtvrtletní odchylky od ustáleného stavu v %. Mezera x je v % potenciálu. UI zobrazuje anualizované úrovně: π = 4π + π\*, i = 4i + r\* + π\*, reálná = 4r + r\*, přirozená = 4rn + r\*. Velikost šoku se zadává v p. b. p.a. a dělí se 4.
 - **Kalibrace:** β = 0,99, σ = 1, κ = 0,1, φπ = 1,5, φx = 0,125, ρ = 0,8, π\* = 2 %, r\* = 1 %, dolní mez = 0 %. r\* je jen zobrazovací parametr (formálně β = 0,99 implikuje zhruba 4 %), v README je to uvedené.
 - **m** je kognitivní diskontování (Gabaix 2020). Platí jen v racionálním režimu. Výchozí hodnota 1.
-- **Spec běhu:** `simulate({ params, shocks: [{kind:'rn'|'u'|'v', size, rho, shape:'ar1'|'step', duration, start}], policy: {delay, holdUntil}, horizon, forwardGuidance }, 'rational'|'hybrid')`.
+- **Spec běhu:** `simulate({ params, shocks: [{kind:'rn'|'u'|'v', size, rho, shape:'ar1'|'step', duration, start}], policy: {delay, holdUntil, rates}, horizon, forwardGuidance }, 'rational'|'hybrid')`.
+  - `shocks` může být i objekt hotových cest `{rn, u, v}` v modelových jednotkách (hra); `policy.rates[t]` = vynucená sazba v modelových jednotkách (NaN/null = pravidlo), nikdy pod mezí.
   - `forwardGuidance: N` znamená `holdUntil = konec schodu + N`. Funguje jen pro šok typu schod.
 - **Výsledek** obsahuje `x, pi, i, r, Ex, Epi, rn, u, v, shadow, atBound, forced` (u hybridního režimu i `w`), dále `levels`, `residual`, `method` ('muc' | 'pf' | 'forward'), `converged` a u hybridního `stable`.
   - Při neurčitosti vrátí `{determinate:false, determinacy}` bez cest.
   - Reálná sazba v hybridním režimu používá subjektivní E_tπ_{t+1}.
 - **Výběr metody:** racionální režim použije MUC, jen když jsou všechny šoky AR(1) od t = 0, nic není vynucené a mez neváže. Jinak použije PF: soustava 3T×3T, T = max(60, horizont + 40), terminální podmínka x_T = π_T = 0, Gaussova eliminace.
 - **Determinace:** obě vlastní čísla A mimo jednotkový kruh. Pro m = 1 to odpovídá podmínce κ(φπ − 1) + (1 − β)φx > 0, což test ověřuje. Při neurčitosti UI nekreslí **žádnou** racionální cestu (ani srovnávací) a zobrazí vysvětlení.
-- **Endogenní ukotvení:** s_t = (1−λ)s_{t−1} + λ|4π_t| a w_{t+1} = w̄·exp(−max(0, s_t − pásmo)/pásmo). Výchozí w̄ = 0,6 (ve scénáři 4 je 0,8), pásmo 1 p. b., λ = 0,3.
+- **Endogenní ukotvení:** s_t = (1−λ)s_{t−1} + λ|4π_t|, w\*_t = w̄·exp(−max(0, s_t − pásmo)/pásmo), w_{t+1} = w_t + g(w\*_t − w_t). Výchozí w̄ = 0,6 (ve scénáři 4 je 0,8), pásmo 1 p. b., λ = 0,3, g = `anchorSpeed` = 1 (laboratoř beze změny proti fázi 1), start `anchorInit` = null (= w̄). Hra: w̄ = 0,9, start 0,6, g = 0,3.
 - **Scénáře:** `build(params, settings)` vrací `{main, alt?}`. Alternativní běh se kreslí čárkovaně. Výběr scénáře vrátí parametry na výchozí hodnoty, připnuté běhy zůstanou.
   - Scénář 3: schod −5 p. b. na 6 čtvrtletí, výchozí N = 1.
   - Scénář 4: u = 2,5 p. b., ρ = 0,85, zpoždění 4 čtvrtletí, hybridní režim.
 
-## Fáze 2: zadání (doslova od uživatele)
+## Fáze 2: co je hotové a jak (pro navazování)
+
+- **Rozklad** (`decompose.js`): IS = m·Ex + σ·Epi − σ·i + σ·rn; NKPC = β·m·Epi + κx + u; TR = φπ·π + φx·x + v + (max(lb, s) − s) [mez] + (i − max(lb, s)) [mimo pravidlo: zpoždění, slib, hráč]. Zobrazení: IS v % potenciálu, NKPC a TR ×4. Šipky diagramu (`causalFlows`) jsou skupiny těchto členů, šipky do uzlu se sečtou na jeho hodnotu (testováno).
+- **Časová osa** je sdílená s grafy: `state.quarter`, najetí na graf ji posune (odjetí pozici nechá). V laboratoři je lepkavá nad grafy, ve vyhodnocení hry má vlastní instanci.
+- **Hra:** 4 čtvrtletí historie (Taylor) + N tahů. Šoky AR(1) + vzácné události se zprávami, obtížnost ×0,6/1/1,35 (jen šoky, ne šum). Šum: inflace 0,3, mezera 0,9, očekávání 0,2. Pozorování jen za čtvrtletí < t. Odvolání (`FIRE`): |π − π\*| > 10 p. b. nebo |x| > 12 %, hra končí dřív a vyhodnotí se odehraná čtvrtletí (autopilot přes stejná čtvrtletí). Ztráta (π−π\*)² + 0,5x² + 0,25(Δi)². Srovnání: autopilot (Taylor modelu, skutečná aktuální data) a „pravidlo na tvých datech“ (zpožděná zašuměná data, zaokrouhleno). Rozbor: 4 pravidla s prahy v `RULES`, řazení podle ztráty navíc proti autopilotovi v okně 4 čtvrtletí, texty jsou šablony v locales. Výchozí seed 1998.
+- **Kalibrace šoků hry** byla laděná simulací přes stovky seedů: při velkých poptávkových šocích hybridní model (E x = x_{t−1} je integrátor) na nulové mezi exploduje i s autopilotem (deflační past). Při zvětšování šoků to znovu ověř.
+- **Ověřeno:** `npm test` (91), Playwright: desktop 1400 px i 375 px bez vodorovného posuvníku, CZ i EN, světlý i tmavý motiv, konzole bez chyb, celá hra myší i klávesnicí, odvolání, opakování se stejným seedem, záložky přes `#game`/`#lab`.
+- **Neověřeno:** Safari a skutečný telefon (dotykové přejíždění po grafech).
+
+## Fáze 2: původní zadání (doslova od uživatele)
 
 Živý diagram:
 - Uzly: Očekávání nahoře; Poptávka, Inflace, Centrální banka pod ním; šipky podle kauzálního řetězce včetně zpětné vazby sazby do poptávky.
@@ -88,18 +110,10 @@ Hra Buď ČNB:
 - Během hry žádné průběžné skóre.
 - Vyhodnocení po hře: ztrátová funkce (odchylka inflace od cíle na druhou + vážená mezera na druhou + penalizace za skoky sazby), srovnání s autopilotem podle Taylorova pravidla při stejné sekvenci šoků, grafy přes sebe a slovní rozbor největších chyb (pozdní reakce, přehnaná reakce, reakce na šum, uvolnění při nabídkovém šoku). Rozbor generuj pravidly, ne přes LLM.
 
-### Návrhy k fázi 2 (z kontextu fáze 1, nejsou závazné)
+### Poznámky k fázi 3
 
-- **Rozklad na příspěvky** jde spočítat přímo z polí výsledku, žádný nový řešič není potřeba:
-  - IS: x = m·Ex (očekávání) − σ(i − Epi) (reálná sazba) + σ·rn (přirozená sazba);
-  - NKPC: π = β·m·Epi (očekávání) + κx (mezera) + u (šok);
-  - TR: i = φπ·π + φx·x + v, plus vliv meze, tj. i − shadow, když `atBound`.
-  - Zajisti testem, že součet příspěvků = proměnná s chybou < 1e-9.
-  - Šipky diagramu: očekávání → poptávka/inflace, poptávka → inflace (κx), inflace/poptávka → banka, banka → poptávka (reálná sazba). Příspěvky do čísel přepočítávej stejně jako v grafech (anualizace, kde dává smysl).
-- **Časová osa:** grafy už mají sdílený kurzor (`state.cursor` a `setCursor` na všech grafech). Přehrávání a posuvník napoj na totéž.
-- **Hra potřebuje krokové API.** `solveHybrid` dnes bere celou politiku dopředu. Rozděl ho na čistou funkci jednoho kroku (`stepHybrid(state, shock_t, rate_t | null) → {state', x, π, i, …}`) a `solveHybrid` přepiš tak, aby ji volal. Stávající testy musí dál procházet.
-  - Herní logiku (generátor šoků se seedem, pozorování se zpožděním a šumem, ztrátu, autopilota, pravidlový rozbor chyb) dej do `src/game/` nebo `src/model/game.js`, bez DOM a s testy: opakovatelnost se stejným seedem, autopilot = solveHybrid se stejnými šoky, ztráta, pravidla rozboru na připravených případech.
-- **Sazba hráče je v úrovni % p.a.** Do modelových jednotek se převádí (i_lvl − r\* − π\*)/4 a nesmí klesnout pod dolní mez.
+- Diagram má rozložení počítané v `layout(W)` v `diagram.js`; kurz koruny bude další uzel a nové šipky. `causalFlows` a `FLOW_TARGET` rozšiř o kanály otevřené ekonomiky a drž test „šipky do uzlu = hodnota uzlu“.
+- Hra volá jen `stepHybrid`/`solveHybrid` a `rateToModel`; pro otevřený režim bude potřeba otevřená varianta kroku se stejným rozhraním.
 
 ## Fáze 3 a 4 (pro orientaci, doslova)
 
@@ -121,5 +135,5 @@ Hra Buď ČNB:
 
 - `npm test` musí procházet. Nové části jádra pokryj testy: rezidua < 1e-9, znaménka, mez, ustálený stav bez šoků, determinace.
 - V prohlížeči ověř desktop i mobil (375 px, bez vodorovného posuvníku), CZ i EN a konzoli bez chyb.
-- **Neověřeno z fáze 1:** světlý motiv vizuálně, Safari a skutečný telefon.
+- **Neověřeno:** Safari a skutečný telefon. Světlý i tmavý motiv jsou od fáze 2 ověřené na snímcích z Playwrightu.
 - Chybí soubor LICENSE. Přidej ho jen na požádání.

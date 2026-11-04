@@ -20,6 +20,8 @@ export const DEFAULT_PARAMS = Object.freeze({
   endogenousAnchoring: false, // hybrid mode: w falls when inflation stays far from target
   anchorBand: 1, // tolerance band (p.p. p.a.) before credibility starts to erode
   anchorMemory: 0.3, // weight of the latest miss in the running memory of misses
+  anchorSpeed: 1, // speed at which w moves towards the credibility earned (1 = immediately)
+  anchorInit: null, // starting w (null = anchoring); the game starts below the ceiling
 });
 
 // Slider metadata for every numeric parameter (ranges are deliberately wide

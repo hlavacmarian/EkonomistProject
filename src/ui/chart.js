@@ -1,5 +1,13 @@
 // Small dependency-free SVG line chart with reference lines, shaded bands,
 // a shared crosshair cursor and a hover tooltip.
+//
+// update(data): data = { n, series, refs, bands, hbands, format, quarterLabel,
+//   xLabel?, tickFrom?, yDomain?, maxHeight? }
+//   series[k] = { label, color, values, dash?, width?, opacity?, points?, noTip? }
+//     points: draw markers instead of a line (e.g. noisy observations)
+//   bands  = [[from, to, className?], ...] shaded quarter ranges
+//   hbands = [{ from, to, label? }, ...] shaded value ranges (e.g. a tolerance band)
+//   xLabel(t) labels the x ticks (default: t), placed every 4 quarters from tickFrom
 
 const SVG = 'http://www.w3.org/2000/svg';
 const M = { top: 10, right: 12, bottom: 26, left: 40 };
@@ -61,6 +69,7 @@ export function createChart(container, { title, unit, onHover }) {
       if (Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
     }
     for (const r of data.refs || []) { lo = Math.min(lo, r.y); hi = Math.max(hi, r.y); }
+    for (const b of data.hbands || []) { lo = Math.min(lo, b.from); hi = Math.max(hi, b.to); }
     if (!Number.isFinite(lo)) { lo = -1; hi = 1; }
     if (hi - lo < 0.5) { const mid = (hi + lo) / 2; lo = mid - 0.25; hi = mid + 0.25; }
     const pad = (hi - lo) * 0.08;
@@ -85,16 +94,24 @@ export function createChart(container, { title, unit, onHover }) {
       label.textContent = data.format(Math.abs(v) < step / 1e6 ? 0 : v, step < 1 ? (step < 0.1 ? 2 : 1) : 0);
     }
     // x ticks every 4 quarters
-    for (let t = 0; t < n; t += 4) {
+    const tickFrom = ((data.tickFrom || 0) % 4 + 4) % 4;
+    for (let t = tickFrom; t < n; t += 4) {
       const label = el('text', { x: X(t), y: height - 8, 'text-anchor': 'middle', class: 'tick' }, grid);
-      label.textContent = String(t);
+      label.textContent = data.xLabel ? data.xLabel(t) : String(t);
+    }
+
+    // Shaded value ranges (e.g. the tolerance band around the target)
+    for (const b of data.hbands || []) {
+      const y0 = Y(Math.min(hi, b.to));
+      const y1 = Y(Math.max(lo, b.from));
+      el('rect', { x: M.left, y: y0, width: pw, height: Math.max(1, y1 - y0), class: 'hband' }, svg);
     }
 
     // Shaded bands (e.g. quarters at the lower bound)
-    for (const [a, b] of data.bands || []) {
+    for (const [a, b, cls] of data.bands || []) {
       const x0 = X(Math.max(0, a - 0.5));
       const x1 = X(Math.min(n - 1, b + 0.5));
-      el('rect', { x: x0, y: M.top, width: Math.max(1, x1 - x0), height: ph, class: 'band' }, svg);
+      el('rect', { x: x0, y: M.top, width: Math.max(1, x1 - x0), height: ph, class: cls || 'band' }, svg);
     }
 
     // Reference lines
@@ -107,6 +124,13 @@ export function createChart(container, { title, unit, onHover }) {
 
     // Series
     for (const s of data.series) {
+      if (s.points) {
+        const g = el('g', { style: `fill:${s.color}`, opacity: s.opacity ?? 1 }, svg);
+        for (let t = 0; t < Math.min(n, s.values.length); t++) {
+          if (Number.isFinite(s.values[t])) el('circle', { cx: X(t), cy: Y(s.values[t]), r: 2.6 }, g);
+        }
+        continue;
+      }
       const pts = [];
       for (let t = 0; t < Math.min(n, s.values.length); t++) {
         if (Number.isFinite(s.values[t])) pts.push(`${X(t).toFixed(1)},${Y(s.values[t]).toFixed(1)}`);
@@ -139,7 +163,7 @@ export function createChart(container, { title, unit, onHover }) {
     };
     hit.addEventListener('pointermove', move);
     hit.addEventListener('pointerdown', move);
-    hit.addEventListener('pointerleave', () => { showTip = false; onHover?.(null); });
+    hit.addEventListener('pointerleave', () => { showTip = false; renderTip(); onHover?.(null); });
   }
 
   function renderCursor() {

@@ -19,7 +19,12 @@
   </header>
   <div class="disclaimer" role="note" data-i18n="app.disclaimer"></div>
 
-  <main class="layout">
+  <nav class="tabs" role="tablist" data-i18n-aria="tabs.aria">
+    <button type="button" role="tab" id="tab-lab" data-tab="lab" aria-controls="view-lab" aria-selected="true" data-i18n="tabs.lab"></button>
+    <button type="button" role="tab" id="tab-game" data-tab="game" aria-controls="view-game" aria-selected="false" data-i18n="tabs.game"></button>
+  </nav>
+
+  <main class="layout" id="view-lab" role="tabpanel" aria-labelledby="tab-lab">
     <aside class="controls" id="controls" aria-label="Controls"></aside>
 
     <section class="content">
@@ -35,6 +40,8 @@
         </div>
       </div>
 
+      <div id="timeline" class="sticky-timeline"></div>
+
       <div class="charts" id="charts">
         <div id="chart-gap"></div>
         <div id="chart-inflation"></div>
@@ -45,12 +52,16 @@
 
       <div class="status" id="status" aria-live="polite"></div>
 
+      <article class="card" id="live"></article>
+
       <div class="panels">
         <article class="card" id="explain"></article>
         <article class="card" id="numbers"></article>
       </div>
     </section>
   </main>
+
+  <main class="game-view" id="view-game" role="tabpanel" aria-labelledby="tab-game" hidden></main>
 
   <footer class="foot">
     <span>Model: Woodford (2003), <em>Interest and Prices</em>; Hall (1988); Gabaix (2020).</span>

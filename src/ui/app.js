@@ -6,7 +6,10 @@ import {
 } from '../model/index.js';
 import { SCENARIOS, scenarioById, buildRuns } from '../scenarios.js';
 import { createChart } from './chart.js';
-import { loadLocale, t, fmt, getLang, applyStatic, LANGS } from './i18n.js';
+import { createTimeline } from './timeline.js';
+import { createLivePanel } from './live.js';
+import { createGameView } from './game.js';
+import { loadLocale, t, fmt, getLang, applyStatic, eqRefs, LANGS } from './i18n.js';
 
 const MAX_PINS = 4;
 const PIN_COLORS = ['var(--s3)', 'var(--s7)', 'var(--s5)', 'var(--s6)'];
@@ -28,13 +31,18 @@ const state = {
   settings: { ...SCENARIOS[0].defaults },
   pins: [],
   pinCounter: 0,
-  cursor: null,
+  quarter: 0, // timeline position, shared by the charts and the live diagram
+  liveRun: null, // which run the live diagram shows
+  tab: 'lab',
   openTips: new Set(),
 };
 
 const $ = (sel) => document.querySelector(sel);
 const charts = {};
 let lastResults = [];
+let timeline = null;
+let live = null;
+let gameView = null;
 
 // ---------------------------------------------------------------------------
 // Persistence of per-viewer conveniences (language only).
@@ -49,11 +57,6 @@ function saveLang(l) {
 // Helpers
 
 const decimals = (step) => (step >= 1 ? 0 : step >= 0.1 ? 1 : step >= 0.01 ? 2 : 3);
-
-function eqRefs(html) {
-  return html.replace(/\[\[(IS|NKPC|TR|E)\]\]/g,
-    (_, id) => `<button type="button" class="eqref" data-eq="${id}">(${id})</button>`);
-}
 
 function ranges(list) {
   const out = [];
@@ -344,9 +347,7 @@ function selectScenario(id) {
 // ---------------------------------------------------------------------------
 // Equations
 
-function renderEquations() {
-  const m = state.params.expDiscount;
-  const mode = state.settings.mode;
+function equationsHtml(mode = state.settings.mode, m = state.params.expDiscount) {
   const mTxt = m !== 1 && mode !== 'hybrid' ? `<b>m</b>·` : '';
   const eqs = [
     ['IS', `x<sub>t</sub> = ${mTxt}E<sub>t</sub>x<sub>t+1</sub> − σ (i<sub>t</sub> − E<sub>t</sub>π<sub>t+1</sub> − r<sup>n</sup><sub>t</sub>)`],
@@ -354,19 +355,25 @@ function renderEquations() {
     ['TR', `i<sub>t</sub> = max( i<sub>LB</sub> , φ<sub>π</sub>π<sub>t</sub> + φ<sub>x</sub>x<sub>t</sub> + v<sub>t</sub> )`],
     ['E', `E<sub>t</sub>π<sub>t+1</sub> = w<sub>t</sub>·π* + (1 − w<sub>t</sub>)·π<sub>t−1</sub> ,&nbsp;&nbsp; E<sub>t</sub>x<sub>t+1</sub> = x<sub>t−1</sub>`],
   ];
-  $('#equations').innerHTML = `<h2>${t('sections.equations')}</h2>
-    <div class="eqs">${eqs.map(([id, math]) => `
+  return `<div class="eqs">${eqs.map(([id, math]) => `
       <div class="eq ${id === 'E' && mode === 'rational' ? 'off' : ''}" data-eqrow="${id}">
         <div class="eq-tag">(${id})</div>
         <div class="eq-math">${math}</div>
         <div class="eq-desc">${t(`equations.${id}`)}</div>
       </div>`).join('')}
-    </div>
+    </div>`;
+}
+
+function renderEquations() {
+  $('#equations').innerHTML = `<h2>${t('sections.equations')}</h2>
+    ${equationsHtml()}
     <p class="eq-levels">${t('equations.levels')}</p>`;
 }
 
+const activeView = () => document.getElementById(state.tab === 'game' ? 'view-game' : 'view-lab');
+
 function highlightEq(id, on) {
-  for (const row of document.querySelectorAll('[data-eqrow]')) {
+  for (const row of activeView().querySelectorAll('[data-eqrow]')) {
     row.classList.toggle('hl', on && row.dataset.eqrow === id);
   }
 }
@@ -466,7 +473,10 @@ function refresh() {
   if (anchorSeries.length) {
     charts.anchoring.update({ ...common, series: anchorSeries, refs: [], yDomain: [0, 1], maxHeight: 190 });
   }
-  for (const c of Object.values(charts)) c.setCursor(state.cursor);
+  timeline.setN(n);
+  state.quarter = Math.min(state.quarter, n - 1);
+  for (const c of Object.values(charts)) c.setCursor(state.quarter);
+  updateLive(valid);
 
   renderLegend(valid, primary, bands.length > 0);
   renderStatus(results);
@@ -562,6 +572,53 @@ function renderNumbers(valid) {
 }
 
 // ---------------------------------------------------------------------------
+// Timeline + live diagram
+
+function setQuarter(q, fromUser = false) {
+  state.quarter = q;
+  if (fromUser) timeline.stop();
+  timeline.setQuarter(q);
+  for (const c of Object.values(charts)) c.setCursor(q);
+  live.setQuarter(q);
+}
+
+function updateLive(valid) {
+  const card = $('#live');
+  card.hidden = valid.length === 0;
+  if (!valid.length) return;
+  const run = valid.find((r) => r.key === state.liveRun) || valid[0];
+  state.liveRun = run.key;
+  live.update({
+    result: run.res,
+    params: { ...state.params, ...(run.spec.params || {}) },
+    runs: valid.map((r) => ({ key: r.key, label: runLabel(r) })),
+    runKey: run.key,
+    quarterLabel: (q) => t('app.quarterTitle', { t: q }),
+    context: 'lab',
+  });
+  live.setQuarter(state.quarter);
+}
+
+const timelineTexts = () => ({
+  play: t('timeline.play'), pause: t('timeline.pause'), back: t('timeline.back'),
+  forward: t('timeline.forward'), start: t('timeline.start'), slider: t('timeline.slider'),
+});
+
+// ---------------------------------------------------------------------------
+// Tabs
+
+function showTab(tab, push = true) {
+  state.tab = tab === 'game' ? 'game' : 'lab';
+  for (const b of document.querySelectorAll('[data-tab]')) b.setAttribute('aria-selected', String(b.dataset.tab === state.tab));
+  $('#view-lab').hidden = state.tab !== 'lab';
+  $('#view-game').hidden = state.tab !== 'game';
+  if (state.tab !== 'lab') timeline.stop();
+  if (push) {
+    try { history.replaceState(null, '', state.tab === 'game' ? '#game' : '#lab'); } catch { /* not allowed */ }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Pins
 
 function pinCurrent() {
@@ -594,10 +651,8 @@ function pinCurrent() {
 // Boot
 
 function createCharts() {
-  const onHover = (q) => {
-    state.cursor = q;
-    for (const c of Object.values(charts)) c.setCursor(q);
-  };
+  // Hovering a chart moves the shared timeline (leaving it keeps the position).
+  const onHover = (q) => { if (q !== null) setQuarter(q, true); };
   const defs = [
     ['gap', 'charts.gap', 'charts.gapUnit'],
     ['inflation', 'charts.inflation', 'charts.inflationUnit'],
@@ -616,8 +671,10 @@ async function setLanguage(l) {
   saveLang(l);
   applyStatic();
   createCharts();
+  timeline.render();
   renderControls();
   refresh();
+  gameView.render();
 }
 
 function bindGlobal() {
@@ -633,8 +690,8 @@ function bindGlobal() {
     state.pins = state.pins.filter((p) => p.id !== id);
     refresh();
   });
-  // Equation references in the explanation panel highlight the equation.
-  const content = document.querySelector('.content');
+  // Equation references in texts highlight the equation of the visible view.
+  const content = document.body;
   content.addEventListener('mouseover', (ev) => {
     const ref = ev.target.closest('.eqref');
     if (ref) highlightEq(ref.dataset.eq, true);
@@ -646,7 +703,7 @@ function bindGlobal() {
     const ref = ev.target.closest('.eqref');
     if (!ref) return;
     highlightEq(ref.dataset.eq, true);
-    document.querySelector(`[data-eqrow="${ref.dataset.eq}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    activeView().querySelector(`[data-eqrow="${ref.dataset.eq}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => highlightEq(null, false), 1800);
   });
   content.addEventListener('focusin', (ev) => {
@@ -656,6 +713,20 @@ function bindGlobal() {
   content.addEventListener('focusout', (ev) => {
     if (ev.target.closest('.eqref')) highlightEq(null, false);
   });
+  $('.tabs').addEventListener('click', (ev) => {
+    const tab = ev.target.closest('[data-tab]')?.dataset.tab;
+    if (tab) showTab(tab);
+  });
+  $('.tabs').addEventListener('keydown', (ev) => {
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    const next = state.tab === 'lab' ? 'game' : 'lab';
+    showTab(next);
+    document.getElementById(`tab-${next}`).focus();
+  });
+  window.addEventListener('hashchange', () => showTab(location.hash === '#game' ? 'game' : 'lab', false));
+  document.addEventListener('keydown', (ev) => {
+    if (state.tab === 'game' && gameView.handleKey(ev)) ev.preventDefault();
+  });
 }
 
 async function main() {
@@ -663,10 +734,23 @@ async function main() {
   await loadLocale(LANGS.includes(stored) ? stored : 'cs');
   applyStatic();
   createCharts();
+  timeline = createTimeline($('#timeline'), {
+    onChange: (q) => setQuarter(q),
+    label: (q) => t('app.quarterTitle', { t: q }),
+    texts: timelineTexts,
+  });
+  live = createLivePanel($('#live'), {
+    onQuarter: (q) => setQuarter(q, true),
+    onRun: (key) => { state.liveRun = key; updateLive(lastResults); },
+  });
+  gameView = createGameView($('#view-game'), { equationsHtml: () => equationsHtml('hybrid', 1) });
+  gameView.setTimelineTexts(timelineTexts);
   bindControls();
   bindGlobal();
   renderControls();
   refresh();
+  gameView.render();
+  showTab(location.hash === '#game' ? 'game' : 'lab', false);
 }
 
 main();

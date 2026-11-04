@@ -284,5 +284,278 @@
       "delay": "The bank reacts with a delay of {n} qtrs: until then it keeps its rate at the neutral level regardless of the [[TR]].",
       "discount": "Discounting of expectations m = {m}: future values in the [[IS]] and [[NKPC]] are dampened."
     }
+  },
+  "tabs": {
+    "aria": "Parts of the app",
+    "lab": "Shock lab",
+    "game": "Be the central bank"
+  },
+  "timeline": {
+    "play": "Play",
+    "pause": "Pause",
+    "back": "One quarter back",
+    "forward": "One quarter forward",
+    "start": "Back to the start",
+    "slider": "Quarter on the timeline"
+  },
+  "live": {
+    "title": "Live diagram: who drives whom",
+    "run": "Diagram shows",
+    "intro": {
+      "rational": "Each arrow shows how much one term of an equation contributes to the variable it points to in the selected quarter. The arrows entering a node add up exactly to its value: demand by the [[IS]], inflation by the [[NKPC]], the rate by the [[TR]]. Under rational expectations, expectations look ahead: E<sub>t</sub>x<sub>t+1</sub> and E<sub>t</sub>π<sub>t+1</sub> are next quarter's values, so the future acts today. Play, step through or drag the timeline above; hovering over a chart moves it too.",
+      "hybrid": "Each arrow shows how much one term of an equation contributes to the variable it points to in the selected quarter. The arrows entering a node add up exactly to its value: demand by the [[IS]], inflation by the [[NKPC]], the rate by the [[TR]]. Under hybrid expectations, expectations are formed from the past [[E]]: E<sub>t</sub>x<sub>t+1</sub> = x<sub>t−1</sub> and E<sub>t</sub>π<sub>t+1</sub> = (1 − w)·π<sub>t−1</sub> (as deviations from target), which is why responses come with a lag. Play, step through or drag the timeline; hovering over a chart moves it too."
+    },
+    "legendUp": "raises the variable it points to",
+    "legendDown": "lowers it",
+    "legendInfo": {
+      "rational": "where expectations come from (the future, t+1)",
+      "hybrid": "where expectations come from (the past, t−1)"
+    },
+    "legendWidth": "Arrow width and pulse speed are proportional to the size of the contribution, on one scale for the whole period. The gap is in % of potential, inflation and the rate in p.p. p.a. relative to the target and to the neutral rate.",
+    "aria": "Diagram of the links between expectations, demand, inflation and the central bank",
+    "blocks": {
+      "IS": "Demand",
+      "NKPC": "Inflation",
+      "TR": "Rate"
+    },
+    "calm": "No term plays a big role right now.",
+    "driverUp": "Biggest upward push right now: {term} ({v}).",
+    "driverDown": "Biggest downward push right now: {term} ({v}).",
+    "bars": {
+      "IS": "Output gap (IS)",
+      "NKPC": "Inflation vs target (NKPC)",
+      "TR": "Rate vs neutral (TR)"
+    },
+    "totals": {
+      "IS": "output gap",
+      "NKPC": "inflation vs target",
+      "TR": "rate vs neutral"
+    }
+  },
+  "decomp": {
+    "terms": {
+      "IS": {
+        "expX": "expected demand",
+        "expPi": "expected inflation",
+        "rate": "nominal rate",
+        "natural": "natural rate"
+      },
+      "NKPC": {
+        "exp": "expected inflation",
+        "gap": "output gap",
+        "shock": "cost-push shock"
+      },
+      "TR": {
+        "infl": "response to inflation",
+        "gap": "response to the gap",
+        "shock": "monetary shock",
+        "bound": "lower bound"
+      }
+    },
+    "override": {
+      "lab": "delay or promise",
+      "game": "deviation from the rule"
+    },
+    "units": {
+      "IS": "% of potential",
+      "NKPC": "p.p. p.a.",
+      "TR": "p.p. p.a."
+    }
+  },
+  "diagram": {
+    "nodes": {
+      "exp": "Expectations",
+      "demand": "Demand",
+      "inflation": "Inflation",
+      "bank": "Central bank",
+      "bankShort": "Bank"
+    },
+    "nodeTips": {
+      "exp_rational": "Expected gap and inflation next quarter. Under rational expectations they equal next quarter's actual values.",
+      "exp_hybrid": "Expected gap and inflation next quarter. Under hybrid expectations they are formed from last quarter; w is the credibility of the inflation target.",
+      "demand": "Output gap x: demand relative to potential (IS).",
+      "inflation": "Inflation π in % p.a. (NKPC).",
+      "bank": "Nominal rate i and real rate i − Eπ in % p.a. (Taylor rule with a lower bound)."
+    },
+    "arrows": {
+      "expDemand": "m·E x + σ·E π: when people expect higher demand they spend today; higher expected inflation lowers the real rate (IS).",
+      "bankDemand": "−σ·i: a higher nominal rate, for given expectations, raises the real rate and slows demand (IS). Feedback from the bank.",
+      "shockDemand": "σ·rⁿ: the natural rate, i.e. a demand shock (IS).",
+      "expInfl": "β·m·E π: firms that reset prices now take expected inflation into account (NKPC).",
+      "demandInfl": "κ·x: higher demand raises marginal costs and firms raise prices (NKPC).",
+      "shockInfl": "u: a cost-push shock, such as more expensive energy (NKPC).",
+      "inflBank": "φπ·π: the bank responds to inflation (TR).",
+      "demandBank": "φx·x: the bank responds to the output gap (TR).",
+      "shockBank": "v: a monetary shock, the bank deviating from its rule (TR).",
+      "limitBank": "Difference between the actual rate and the rule: the lower bound (the rate cannot go lower), a delayed response, a promise (forward guidance), in the game the player's decision."
+    },
+    "stubs": {
+      "bound": "bound",
+      "override_lab": "off rule",
+      "override_game": "off rule"
+    },
+    "info": {
+      "rational": "t+1",
+      "hybrid": "t−1"
+    },
+    "infoTitle": {
+      "rational": "Rational expectations: people know the model, so they expect what will actually happen next quarter.",
+      "hybrid": "Hybrid expectations: the forecast is formed from last quarter."
+    },
+    "credibility": "credibility",
+    "real": "real"
+  },
+  "game": {
+    "title": "Be the central bank",
+    "lead": "You are the bank board. Every quarter you set the nominal interest rate and try to keep inflation at the 2% target without needless swings in output. Random shocks hit the economy along the way.",
+    "rules": [
+      "You move the rate in steps of 0.25 p.p. It cannot go below the lower bound (0%).",
+      "You see the data with a one-quarter lag, and they are noisy first estimates. The output gap is much harder to measure than inflation.",
+      "Expectations are hybrid [[E]]: people look at the past and trust the target with weight w. Credibility grows while inflation stays within ±1 p.p. of the target and falls when it gets away.",
+      "News about big events (energy prices, a collapse in demand) arrives at once, but without numbers.",
+      "If inflation gets more than 10 p.p. away from the target or the output gap beyond ±12%, the government replaces you and the game ends early.",
+      "No score is shown during the game. After the last quarter you get a review and a comparison with the autopilot."
+    ],
+    "length": "Game length",
+    "qUnit": "qtrs",
+    "lengthTip": "Number of quarters you decide (default 24 = 6 years). They are preceded by 4 quarters of history in which the bank followed the Taylor rule.",
+    "difficultyLabel": "Difficulty (size of shocks)",
+    "difficulty": {
+      "easy": "Mild",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "difficultyTip": "Difficulty scales the demand and cost shocks (mild ×{easy}, hard ×{hard}). The noise in the data stays the same. On hard, the rate hits the lower bound more often, and occasionally the economy can fall into a deflation trap.",
+    "seed": "Seed (game number)",
+    "seedTip": "The same seed gives the same sequence of shocks and of data noise. You can replay a game with another strategy or pass the number on to someone else. The default, 1998, is the year the Czech National Bank switched to inflation targeting.",
+    "randomSeed": "Random",
+    "start": "Start the game",
+    "explain": [
+      "<b>Why hybrid expectations.</b> Rational expectations in the [[IS]] and [[NKPC]] assume that people know the rule the bank follows. A player has no fixed rule and decides quarter by quarter. That is why expectations in the game are formed from the past [[E]].",
+      "<b>Credibility is capital.</b> The weight w of the target in expectations starts at 0.6. While inflation stays within the band it grows towards 0.9; when inflation stays outside for long, it falls. With weak credibility, last year's inflation feeds more into this year's [[NKPC]] and every shock lasts longer.",
+      "<b>Demand accumulates.</b> With E<sub>t</sub>x<sub>t+1</sub> = x<sub>t−1</sub>, the output gap in the [[IS]] keeps moving as long as the real rate differs from the natural rate. Doing nothing lets the gap drift quarter after quarter.",
+      "<b>Lagged, noisy data.</b> You decide on last quarter's figures, and they can be wrong. React to every wiggle and you react to noise; wait too long and you react late. The rule [[TR]] is a useful guide, but in the game nobody applies it for you."
+    ],
+    "lossNote": "Loss = Σ [(π − π*)² + {wg}·x² + {wr}·(Δi)²] over your quarters; π and i in % p.a., x in % of potential, Δi is the change of the rate from the previous quarter. Lower is better.",
+    "qHistory": "quarter {q} (history)",
+    "qGame": "quarter {q} of {n}",
+    "observedNote": "The charts show only what the bank knows: first estimates with measurement error (noise standard deviation: inflation {gi} p.p., gap {gx}%). The grey strip is the history before you took over.",
+    "charts": {
+      "inflationSeen": "Inflation (first estimate)",
+      "gapSeen": "Output gap (first estimate)",
+      "rateYours": "Your rate",
+      "expectSeen": "Inflation expectations (survey)",
+      "seen": "first estimate",
+      "yourRate": "rate",
+      "survey": "survey",
+      "inflationTrue": "Inflation (actual)",
+      "gapTrue": "Output gap (actual)",
+      "seenYou": "first estimate (your data)",
+      "shocks": "Shocks that hit the economy",
+      "shocksUnit": "p.p. p.a.",
+      "naturalDev": "natural rate rⁿ (deviation)",
+      "cost": "cost-push shock u",
+      "histNote": "grey strip = history before you took over"
+    },
+    "neutral": "neutral",
+    "news": {
+      "rn_up": "Firms report record orders and households are spending more.",
+      "rn_down": "Firms are cancelling investment and households start saving.",
+      "u_up": "Energy and commodity prices are surging.",
+      "u_down": "Energy and commodity prices are tumbling.",
+      "none": "No special news."
+    },
+    "newsTag": "News",
+    "quarterOf": "Quarter {q} of {n}",
+    "latest": "Latest data (quarter {q}, first estimate)",
+    "data": {
+      "inflation": "Inflation",
+      "vsTarget": "({d} p.p. vs target)",
+      "gap": "Output gap",
+      "expectations": "Inflation expectations",
+      "lastRate": "Rate last quarter"
+    },
+    "setRate": "Rate for quarter {q}",
+    "noChange": "no change",
+    "change": "change {d} p.p.",
+    "atBound": "at the lower bound",
+    "submit": "Confirm rate",
+    "submitLast": "Confirm and review",
+    "keys": "Keys: ↑ / ↓ move the rate by 0.25 p.p. (by 1 with Shift), Enter confirms.",
+    "quit": "End game",
+    "verdict": {
+      "lost": "The economy got out of control: inflation ran far away from the target. Your loss {p}, autopilot {a}.",
+      "better": "Better than the autopilot! Your loss {p}, autopilot {a}.",
+      "close": "Almost as good as the autopilot: your loss {p}, autopilot {a}.",
+      "worse": "The autopilot did better: your loss {p}, autopilot {a}.",
+      "muchWorse": "The autopilot did much better: your loss {p}, autopilot {a}.",
+      "beatData": "Applied to the same noisy data you saw, the same rule had a loss of {d}, so your decisions were better.",
+      "lostData": "Applied to the same noisy data you saw, the same rule had a loss of {d}.",
+      "firedLoss": "Over the same quarters: your loss {p}, autopilot {a}."
+    },
+    "findings": {
+      "late": {
+        "high": "The data showed inflation of {infl}% p.a., above the tolerance band, yet the rate stayed around {rate}% for {n} qtrs. The Taylor rule would have set about {rule}% on the same data. When inflation rises and the nominal rate stands still, the real rate falls: policy was in effect easing [[IS]] and high inflation was spilling into expectations [[E]].",
+        "low": "The data showed inflation of {infl}% p.a., below the tolerance band, yet the rate stayed around {rate}% for {n} qtrs. The rule would have set about {rule}% on the same data. Too high a real rate held demand down [[IS]] and low inflation undermined trust in the target [[E]]."
+      },
+      "over": {
+        "up_inflation": "Raising the rate by {move} p.p. to {rate}% went far beyond what the data suggested (rule about {rule}%). In {at} inflation then fell to {value}%, below the tolerance band. The rate works with a lag through demand [[IS]] and the [[NKPC]], so a big jump overshoots.",
+        "up_gap": "Raising the rate by {move} p.p. to {rate}% went far beyond what the data suggested (rule about {rule}%). In {at} the output gap then fell to {value}%: a needlessly deep slump [[IS]].",
+        "down_inflation": "Cutting the rate by {move} p.p. to {rate}% went far beyond what the data suggested (rule about {rule}%). In {at} inflation then jumped to {value}%, above the tolerance band [[NKPC]].",
+        "down_gap": "Cutting the rate by {move} p.p. to {rate}% went far beyond what the data suggested (rule about {rule}%). In {at} the output gap then rose to {value}%: overheating [[IS]]."
+      },
+      "noise": {
+        "up_gap": "Raising the rate by {move} p.p. followed a strong output-gap reading ({seen}%). The actual gap was {truth}%: most of the signal was measurement noise. The gap is much harder to measure than inflation, so it pays to wait for confirmation in later data.",
+        "down_gap": "Cutting the rate by {move} p.p. followed a weak output-gap reading ({seen}%). The actual gap was {truth}%: most of the signal was measurement noise. The gap is much harder to measure than inflation, so it pays to wait for confirmation in later data.",
+        "up_inflation": "Raising the rate by {move} p.p. followed a high inflation reading ({seen}%). Actual inflation was {truth}%: much of the signal was measurement noise. One reading does not make a trend.",
+        "down_inflation": "Cutting the rate by {move} p.p. followed a low inflation reading ({seen}%). Actual inflation was {truth}%: much of the signal was measurement noise. One reading does not make a trend."
+      },
+      "supply": {
+        "down": "A cost-push shock was lifting inflation (u ≈ +{cost} p.p.), yet the rate was cut by {cut} p.p. to {rate}%, probably because output was weaker (gap in the data {gap}%). Inflation was already above target ({infl}%). The lower real rate added demand and gave inflation in the [[NKPC]] more fuel. With a cost-push shock the bank has to accept a temporary fall in output.",
+        "credibility": "Credibility of the target fell from {w0} to {w1} [[E]]."
+      }
+    },
+    "findingTitles": {
+      "late": "Late reaction",
+      "over": "Overreaction",
+      "noise": "Reacting to noise",
+      "supply": "Easing in a supply shock"
+    },
+    "runs": {
+      "player": "You",
+      "autopilot": "Autopilot (Taylor rule)",
+      "dataRule": "Rule on your data"
+    },
+    "costTip": "How much higher your loss was than the autopilot's in this quarter and the following {n}.",
+    "cost": "extra loss +{v}",
+    "facts": {
+      "credibility": "Credibility of the target w: {w0} at the start, {w1} at the end, lowest {wmin} (autopilot at the end {wa}).",
+      "moves": "The rate changed in {n} of {N} quarters, by {m} p.p. on average (autopilot {na}×, by {ma} p.p. on average).",
+      "worst": "Inflation was furthest from target in {q}: {v}% p.a."
+    },
+    "reviewTitle": "Review",
+    "reviewMeta": "seed {seed} · {n} qtrs · {d}",
+    "table": {
+      "run": "Run",
+      "loss": "Loss",
+      "inflation": "of which inflation",
+      "gap": "gap",
+      "rate": "rate jumps",
+      "inBand": "qtrs in band",
+      "credibility": "credibility at end"
+    },
+    "autopilotNote": "The autopilot follows the model's Taylor rule and sees the current quarter's actual data, so it has an information advantage. The row “Rule on your data” applies the same rule to the same lagged, noisy data that you see.",
+    "mistakesTitle": "Biggest mistakes",
+    "noMistakes": "None of the mistakes we look for (late reaction, overreaction, reacting to noise, easing in a supply shock) cost anything substantial. Well done.",
+    "rulesNote": "The review is generated by fixed rules from the game data (the thresholds are listed in the README), not by a language model. Mistakes are sorted by how much they cost.",
+    "replay": "Replay the same seed",
+    "newGame": "New game (another seed)",
+    "toSetup": "Change settings",
+    "fired": {
+      "inflation": "The government replaced you in {q}: inflation shot up to {v}% p.a. Only the quarters played are reviewed (out of {n} planned).",
+      "deflation": "The government replaced you in {q}: inflation fell to {v}% p.a. and the economy is sliding into deflation. Only the quarters played are reviewed (out of {n} planned).",
+      "boom": "The government replaced you in {q}: the economy overheated, output gap {v}%. Only the quarters played are reviewed (out of {n} planned).",
+      "slump": "The government replaced you in {q}: a deep recession, output gap {v}%. Only the quarters played are reviewed (out of {n} planned)."
+    }
   }
 }

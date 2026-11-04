@@ -38,6 +38,13 @@ export function fmt(v, digits = 2) {
   return out.replace('-', '−');
 }
 
+// Equation references in texts ([[IS]], [[NKPC]], [[TR]], [[E]]) become buttons
+// that highlight the equation.
+export function eqRefs(html) {
+  return String(html).replace(/\[\[(IS|NKPC|TR|E)\]\]/g,
+    (_, id) => `<button type="button" class="eqref" data-eq="${id}">(${id})</button>`);
+}
+
 export function applyStatic(root = document) {
   for (const node of root.querySelectorAll('[data-i18n]')) node.innerHTML = t(node.dataset.i18n);
   for (const node of root.querySelectorAll('[data-i18n-title]')) node.title = t(node.dataset.i18nTitle);
