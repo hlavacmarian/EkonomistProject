@@ -21,7 +21,8 @@
     "equations": "Model equations",
     "explain": "What is happening and why",
     "numbers": "Key numbers",
-    "pins": "Pinned runs"
+    "pins": "Pinned runs",
+    "open": "Open economy"
   },
   "buttons": {
     "reset": "Reset to defaults",
@@ -33,7 +34,9 @@
     "info": "What does this mean?",
     "tryHall": "Try σ = 0.2",
     "tryDiscount": "Try m = 0.85",
-    "fixDeterminacy": "Set φ<sub>π</sub> = 1.5"
+    "fixDeterminacy": "Set φ<sub>π</sub> = 1.5",
+    "tryCpiRule": "Try ω = 0 (respond to CPI)",
+    "tryDomesticRule": "Try ω = 1 (domestic inflation)"
   },
   "modes": {
     "rational": "Rational",
@@ -46,14 +49,20 @@
     "kinds": {
       "rn": "Demand (natural rate rⁿ)",
       "u": "Cost-push (u)",
-      "v": "Monetary (v)"
+      "v": "Monetary (v)",
+      "istar": "Foreign interest rate (i*)",
+      "ystar": "Foreign demand (y*)",
+      "chi": "Exchange-rate shock (risk premium χ)"
     },
     "size": "Shock size",
     "sizeUnit": "p.p. p.a.",
     "sizeTip": {
       "rn": "By how many percentage points (annualized) the natural real rate rⁿ moves: the rate at which demand would exactly match potential. Negative = demand slump (people want to save more, firms invest less).",
       "u": "By how many percentage points (annualized) the cost-push shock directly raises inflation in the NKPC, even without overheated demand. Positive = pricier energy or materials, higher markups.",
-      "v": "By how many percentage points (annualized) the bank sets its rate above what the rule implies. Positive = an unexpected tightening."
+      "v": "By how many percentage points (annualized) the bank sets its rate above what the rule implies. Positive = an unexpected tightening.",
+      "istar": "By how many percentage points (annualized) the foreign interest rate changes, e.g. the ECB rate. Positive = foreign tightening. Euro deposits pay more, investors move into euros and the koruna depreciates [[UIP]].",
+      "ystar": "By how many percent of potential foreign demand changes, mainly in the euro area. Negative = a foreign recession. It directly reduces Czech exports [[IS]].",
+      "chi": "Risk premium: by how many percentage points (annualized) more investors want for holding koruna. Positive = investors sell the koruna and it depreciates [[UIP]]. A premium of +2 p.p. with persistence 0.8 weakens the koruna by roughly 2 to 3%."
     },
     "rho": "Persistence ρ",
     "rhoTip": "How long the shock lasts: each quarter a fraction ρ of last quarter's size remains. ρ = 0.8 is a half-life of about 3 quarters, ρ = 0.95 about 13 quarters. A persistent shock moves expectations more, so its immediate impact is larger.",
@@ -76,7 +85,11 @@
     "fg": "Promise: keep the rate at the bound N quarters after the shock ends",
     "fgUnit": "qtrs",
     "fgTip": "Forward guidance: the bank commits to keep its rate at the lower bound until (end of shock + N), even if the rule would raise it earlier. In the rational regime the promise works through expectations already today. Available only for a \"step\" shock.",
-    "fgNeedsStep": "The promise is defined relative to the end of the shock, so it is only available for a \"Temporary step\" shock."
+    "fgNeedsStep": "The promise is defined relative to the end of the shock, so it is only available for a \"Temporary step\" shock.",
+    "floor": "Exchange-rate commitment: koruna no stronger than",
+    "floorTip": "In November 2013 the CNB promised not to let the koruna appreciate below 27 CZK/EUR and defended that line by buying euros (interventions). In the model this is a floor for the exchange rate [[UIP]]: whenever the market would want a stronger koruna, the bank intervenes (ξ > 0) and holds the rate exactly at the floor.",
+    "commitment": "Length of the commitment",
+    "commitmentTip": "For how many quarters from quarter 1 the bank defends the floor. The actual commitment lasted from November 2013 to April 2017, about 14 quarters. Under rational expectations people foresee its end."
   },
   "params": {
     "beta": {
@@ -138,6 +151,35 @@
     "anchorMemory": {
       "label": "Memory speed λ",
       "tip": "How fast the latest inflation miss enters the memory s<sub>t</sub> = (1 − λ)s<sub>t−1</sub> + λ|π<sub>t</sub> − π*|. Small λ = people remember long; trust is lost and regained slowly."
+    },
+    "alpha": {
+      "label": "α — import share of the consumer basket",
+      "tip": "The part of consumer prices that falls on imported goods. The Czech economy is very open, hence the default of 0.35. The higher α, the more the exchange rate moves inflation [[CPI]] and the stronger the exchange-rate channel of monetary policy."
+    },
+    "delta": {
+      "label": "δ — response of exports to the exchange rate",
+      "tip": "By how many percent of potential net exports rise when the koruna depreciates by 1% in real terms [[IS]]. A weaker koruna makes Czech goods cheaper abroad and imports dearer at home, so demand shifts to domestic producers."
+    },
+    "gamma": {
+      "label": "γ — response to foreign demand",
+      "tip": "By how many percent of potential the Czech output gap changes when the foreign (euro-area) output gap changes by 1% [[IS]]. Exports are a large part of Czech GDP, hence the high γ."
+    },
+    "passThrough": {
+      "label": "ψ — speed of exchange-rate pass-through",
+      "tip": "The share of the gap between the exchange rate and import prices that importers close every quarter [[CPI]]. ψ = 1 means immediate and complete pass-through. The default ψ = 0.2 passes a fifth of the remaining gap into import prices each quarter, so a weaker koruna makes imports dearer gradually, as the data show. Fast pass-through (try 0.5 and more) makes the exchange rate a strong but restless channel: a rule that reacts to CPI with a lag starts to oscillate."
+    },
+    "fxExpect": {
+      "label": "θ — exchange-rate expectations (hybrid regime)",
+      "tip": "Hybrid regime: people expect the exchange rate to return towards equilibrium, E<sub>t</sub>q<sub>t+1</sub> = θ·q<sub>t</sub> (regressive expectations, Dornbusch). With θ = 0.8, 80% of today's misalignment is expected to remain next quarter. The higher θ, the more the exchange rate responds to the interest differential [[UIP]]. Under rational expectations the model computes them."
+    },
+    "ruleDomestic": {
+      "label": "ω — the bank responds to domestic inflation",
+      "tip": "Which inflation the Taylor rule responds to [[TR]]: 0 = overall consumer (CPI) inflation, 1 = only inflation of domestic goods, i.e. it “looks through” the direct effect of the exchange rate on import prices. Galí and Monacelli (2005) showed that in their model targeting domestic inflation is best. The CNB targeted CPI, but during its exchange-rate commitment it accepted the direct effect of a weaker koruna on prices."
+    },
+    "eurCzk": {
+      "label": "Steady-state exchange rate",
+      "unit": "CZK/EUR",
+      "tip": "The koruna exchange rate in the steady state. For display only: the model works with the percentage deviation of the exchange rate. The default of 25.7 CZK/EUR is the rate in autumn 2013, just before the exchange-rate commitment."
     }
   },
   "charts": {
@@ -155,7 +197,16 @@
     "lowerBound": "lower bound",
     "neutral": "r*",
     "natural": "natural rⁿ",
-    "atBound": "shading = rate at the bound"
+    "atBound": "shading = rate at the bound",
+    "foreignRate": "foreign rate i*",
+    "naturalForeign": "natural rⁿ / foreign rate",
+    "fx": "Koruna exchange rate",
+    "fxUnit": "CZK/EUR (higher = weaker koruna)",
+    "fxSteady": "steady state",
+    "fxFloor": "commitment",
+    "components": "Inflation of domestic goods and imports",
+    "domestic": "domestic goods",
+    "imported": "imports"
   },
   "runs": {
     "main": "Current settings",
@@ -169,7 +220,9 @@
     "mode_hybrid": "hybrid",
     "pinPrefix": "Pin {n}",
     "pinsEmpty": "Nothing yet. Pin a run, change a parameter and compare the curves.",
-    "pinsFull": "At most {n} runs can be pinned at once."
+    "pinsFull": "At most {n} runs can be pinned at once.",
+    "withFloor": "With commitment ({n} CZK/EUR)",
+    "noFloor": "No commitment"
   },
   "status": {
     "muc": "Solution: method of undetermined coefficients (analytic; AR(1) shock, lower bound not binding).",
@@ -179,7 +232,9 @@
     "residual": "Substitution check: max equation residual {r}",
     "nonconv": "Regime iteration at the bound did not converge; the result may be unreliable. Try a smaller shock or a shorter promise.",
     "unstable": "The hybrid path is explosive: with these parameters and adaptive expectations the economy does not stabilize.",
-    "modeLabel": "{mode}: "
+    "modeLabel": "{mode}: ",
+    "pfOpen": "Solution: perfect foresight for the open economy. One 9T×9T linear system over T = {T} quarters with terminal condition c<sub>T</sub> = π<sup>H</sup><sub>T</sub> = q<sub>T</sub> = 0, solved by banded elimination.",
+    "forwardOpen": "Solution: forward stepping; in every quarter the IS, NKPC, CPI, the exchange rate (UIP) and the rule with the lower bound and the exchange-rate floor are solved simultaneously."
   },
   "determinacy": {
     "title": "Rational regime: the model has no unique solution",
@@ -187,7 +242,8 @@
     "body2": "Why the solution is not unique without it: when the bank responds weakly, higher expected inflation <em>lowers</em> the real rate i − E<sub>t</sub>π<sub>t+1</sub>. Through the IS equation that boosts demand, and through the NKPC it really raises inflation, so expectations fulfil themselves. This works for any (bounded) path of expectations, even without any shock (\"sunspots\"). The model cannot tell which of infinitely many paths will occur, so we draw none.",
     "body3": "Technically: the system E<sub>t</sub>z<sub>t+1</sub> = A z<sub>t</sub> for z = (x, π) has two forward-looking variables, and uniqueness requires both eigenvalues of A to lie outside the unit circle. Their moduli are now {eig}.",
     "discountNote": "With m < 1 the condition changes; the app checks it directly via the eigenvalues.",
-    "hybridNote": "The hybrid regime looks backward, so its solution is unique even here, though not necessarily stable."
+    "hybridNote": "The hybrid regime looks backward, so its solution is unique even here, though not necessarily stable.",
+    "body3Open": "Technically: the open economy has three forward-looking variables (domestic demand, domestic inflation and the real exchange rate) and two predetermined ones (last quarter's exchange rate and the import-price gap). Uniqueness requires three eigenvalues outside the unit circle. One eigenvalue is always exactly 1 (a permanent depreciation offset by lower domestic demand); the long-run condition q → 0 pins it down. Their moduli are now {eig}."
   },
   "numbers": {
     "run": "Run",
@@ -197,14 +253,22 @@
     "rateMax": "Max. rate",
     "atBound": "Quarters at bound",
     "loss": "Loss",
-    "lossTip": "Sum over the displayed horizon of (π − π*)² + 0.5·x², π in % p.a. Smaller = better stabilization. For comparing runs only."
+    "lossTip": "Sum over the displayed horizon of (π − π*)² + 0.5·x², π in % p.a. Smaller = better stabilization. For comparing runs only.",
+    "fx": "Exchange rate (min–max)"
   },
   "equations": {
     "IS": "Demand (IS, Hall's Euler equation): today's demand = expected future demand minus σ × (real rate − natural rate).",
     "NKPC": "Inflation (New Keynesian Phillips curve): today's inflation = discounted expected inflation + κ × gap + cost-push shock.",
     "TR": "Central bank (Taylor rule with a lower bound).",
     "E": "Hybrid expectations (hybrid regime only).",
-    "levels": "Variables are quarterly deviations from steady state; charts show annualized levels: π in % p.a. = 4π + π*, i in % p.a. = 4i + r* + π*. Shocks are AR(1): z<sub>t</sub> = ρz<sub>t−1</sub>."
+    "levels": "Variables are quarterly deviations from steady state; charts show annualized levels: π in % p.a. = 4π + π*, i in % p.a. = 4i + r* + π*. Shocks are AR(1): z<sub>t</sub> = ρz<sub>t−1</sub>.",
+    "CPI": "Consumer inflation = (1 − α) × domestic goods + α × imports. Import prices catch up with the exchange rate at speed ψ; Δe is the change of the exchange rate (koruna depreciation = positive).",
+    "UIP": "Uncovered interest parity: the real exchange rate q (positive = weaker koruna) = the expected rate minus the gap between domestic and foreign real rates, plus the risk premium χ and CNB interventions ξ ≥ 0.",
+    "openIS": "Demand = domestic demand c (Euler equation) + net exports: a weaker real exchange rate δq and foreign demand γy*.",
+    "openNKPC": "Inflation of domestic goods: discounted expected domestic inflation + κ × gap + cost-push shock.",
+    "openTR": "Central bank: Taylor rule with a lower bound. It responds to CPI (ω = 0) or to domestic inflation (ω = 1).",
+    "openE": "Hybrid expectations (hybrid regime only): inflation and demand from the past; the exchange rate is expected to return towards equilibrium.",
+    "levelsOpen": "Variables are quarterly deviations from steady state. The charts show annualized levels (π in % p.a. = 4π + π*) and the exchange rate in CZK/EUR = steady-state rate × (1 + e/100), where e = q + p<sup>H</sup> is the nominal exchange rate. Foreign prices are constant."
   },
   "scenarios": {
     "custom": {
@@ -254,6 +318,18 @@
         "Dashed: a <b>timely reaction</b> (no delay). Inflation returns to the band, anchoring holds and the loss is smaller. Credibility is capital that is hard to build and easy to lose.",
         "In the rational regime (switch to \"Both\") the delay hurts too: a fixed rate while inflation rises temporarily violates the Taylor principle, the real rate falls and inflation jumps. But rational agents know the bank will step in later, so inflation does not de-anchor and falls quickly once the bank acts."
       ]
+    },
+    "koruna": {
+      "title": "5 · CNB exchange-rate commitment (2013–2017)",
+      "short": "Rates at zero, deflation looming. Does promising not to let the koruna appreciate below 27 CZK/EUR help?",
+      "explain": [
+        "Inspired by 2013. Domestic demand weakens, the euro area is in recession (foreign demand −1.5%) and the ECB keeps rates low (−1 p.p.). All three shocks last 10 quarters. Without action (dashed) the rate [[TR]] hits zero, prices fall and the koruna appreciates, because the high real rate and low foreign rates pull capital into koruna [[UIP]]. A stronger koruna makes imports cheaper still [[CPI]] and chokes exports [[IS]].",
+        "<b>Exchange-rate commitment:</b> from quarter 1 the bank does not let the koruna appreciate below the chosen floor and defends it with interventions ξ (buying euros). A weaker koruna makes imports dearer, so consumer inflation [[CPI]] moves away from deflation, and supports net exports [[IS]].",
+        "Under rational expectations the strongest channel is expectations. The nominal exchange rate cannot fall, so if the koruna is to appreciate in real terms, domestic prices must rise. People therefore expect higher inflation and the real rate at the zero bound falls. The exchange rate is an instrument that still works when rates cannot go lower.",
+        "In this scenario the bank responds to domestic inflation (ω = 1), just as the CNB accepted the direct effect of a weaker koruna on prices. Try ω = 0: the rule then answers imported inflation by raising the rate and undermines the commitment itself.",
+        "<b>The exit:</b> the market knows the koruna will appreciate once the commitment ends, and money pours in just before the end. Interventions shoot up, as in spring 2017. After the exit the koruna appreciates, because the floor held it weaker than equilibrium.",
+        "In the hybrid regime there is no expectations channel and the commitment helps only mechanically, through import prices and exports. It does little for output and the jump in the exchange rate rather unsettles inflation, so the loss can even come out higher. The power of an exchange-rate commitment rests mainly on credibility and expectations."
+      ]
     }
   },
   "explain": {
@@ -273,16 +349,33 @@
         "A <b>monetary shock</b> v is a deviation from the rule [[TR]]: the bank sets its rate higher than the rule implies.",
         "Prices are sticky, so a higher nominal rate means a higher real rate. Demand falls in the [[IS]] and inflation falls in the [[NKPC]].",
         "The rule then undoes part of the tightening by itself: lower π and x pull the rate down. Under the default calibration the nominal rate actually <em>falls</em> while the real rate rises. Policy is measured by the path of the real rate, not the nominal one."
+      ],
+      "istar": [
+        "The <b>foreign interest rate</b> i* rises, for example when the ECB tightens. With an unchanged Czech rate it pays to hold euros, investors sell the koruna and it weakens. This is uncovered interest parity [[UIP]]: the real exchange rate equals the sum of future real-rate differentials.",
+        "A weaker koruna makes imports dearer, so consumer inflation [[CPI]] rises, and makes Czech exports cheaper, so demand [[IS]] gets a short-run boost.",
+        "Following its rule [[TR]], the bank answers higher inflation by raising its rate, which undoes part of the depreciation. A small open economy thus imports monetary policy from abroad: when the ECB tightens, the CNB has to tighten a little too."
+      ],
+      "ystar": [
+        "<b>Foreign demand</b> falls, typically in a euro-area recession. Czech exports fall directly, so the output gap falls [[IS]] and so does domestic inflation [[NKPC]].",
+        "The bank cuts its rate under the [[TR]] and the koruna weakens [[UIP]]. That cushions the fall: a weaker koruna supports exports and makes imports dearer, so consumer inflation [[CPI]] falls less than domestic inflation. In the hybrid regime CPI can even rise for a moment.",
+        "A floating exchange rate works as an automatic stabilizer here. Try γ = 0: the foreign recession then leaves the economy untouched."
+      ],
+      "chi": [
+        "<b>Exchange-rate shock:</b> investors suddenly want a higher return for holding koruna (risk premium χ), say because of regional uncertainty. With unchanged rates the koruna depreciates at once [[UIP]].",
+        "Imports get dearer and consumer inflation [[CPI]] jumps even though domestic demand is not overheating. For the bank it is like a cost-push shock: raising the rate [[TR]] supports the koruna and dampens inflation, at the price of weaker demand [[IS]].",
+        "Try ω = 1 in the Open economy section: the bank then looks through the direct effect of the exchange rate on prices and lets imported inflation fade on its own."
       ]
     },
     "mode": {
       "hybrid": "<b>Hybrid regime:</b> expectations are formed from the past [[E]]. Responses are therefore slower and hump-shaped (the peak comes several quarters later) and promises about the future have no effect. The discounting parameter m does not apply in this regime.",
-      "both": "<b>Comparing regimes:</b> blue = rational expectations, orange = hybrid. The difference shows how much work expectations do in the model."
+      "both": "<b>Comparing regimes:</b> blue = rational expectations, orange = hybrid. The difference shows how much work expectations do in the model.",
+      "open": "<b>Open economy:</b> besides demand [[IS]], the rate also works through the koruna [[UIP]]. A higher rate strengthens the koruna, imports get cheaper and consumer inflation [[CPI]] falls faster than in the closed economy; a stronger koruna also dampens net exports."
     },
     "note": {
       "bound": "The rate is at the lower bound ({lb}% p.a.) in quarters {list} (shading in the nominal-rate chart). There the rule [[TR]] does not apply and only higher expected inflation can lower the real rate.",
       "delay": "The bank reacts with a delay of {n} qtrs: until then it keeps its rate at the neutral level regardless of the [[TR]].",
-      "discount": "Discounting of expectations m = {m}: future values in the [[IS]] and [[NKPC]] are dampened."
+      "discount": "Discounting of expectations m = {m}: future values in the [[IS]] and [[NKPC]] are dampened.",
+      "floor": "The koruna is at the commitment floor ({floor} CZK/EUR) in quarters {list} (shading in the exchange-rate chart). There the bank intervenes: it buys euros so that the koruna is not stronger [[UIP]]."
     }
   },
   "tabs": {
@@ -316,7 +409,9 @@
     "blocks": {
       "IS": "Demand",
       "NKPC": "Inflation",
-      "TR": "Rate"
+      "TR": "Rate",
+      "UIP": "Exchange rate",
+      "NKPC_open": "Inflation (CPI)"
     },
     "calm": "No term plays a big role right now.",
     "driverUp": "Biggest upward push right now: {term} ({v}).",
@@ -324,13 +419,19 @@
     "bars": {
       "IS": "Output gap (IS)",
       "NKPC": "Inflation vs target (NKPC)",
-      "TR": "Rate vs neutral (TR)"
+      "TR": "Rate vs neutral (TR)",
+      "UIP": "Real exchange rate (UIP)",
+      "NKPC_open": "CPI inflation vs target"
     },
     "totals": {
       "IS": "output gap",
       "NKPC": "inflation vs target",
-      "TR": "rate vs neutral"
-    }
+      "TR": "rate vs neutral",
+      "UIP": "real exchange rate",
+      "NKPC_open": "CPI vs target"
+    },
+    "introOpen": "In the open economy there is one more node, the <b>Koruna exchange rate</b> [[UIP]]: the rate and expectations move it, and it acts on inflation through import prices [[CPI]] and on demand through net exports (the arc over the top) [[IS]]. Foreign shocks i*, χ and y* come in from outside.",
+    "ariaOpen": "Diagram of the links between expectations, demand, inflation, the central bank and the koruna exchange rate"
   },
   "decomp": {
     "terms": {
@@ -338,18 +439,37 @@
         "expX": "expected demand",
         "expPi": "expected inflation",
         "rate": "nominal rate",
-        "natural": "natural rate"
+        "natural": "natural rate",
+        "fx": "net exports (exchange rate)",
+        "foreign": "foreign demand"
       },
       "NKPC": {
         "exp": "expected inflation",
         "gap": "output gap",
-        "shock": "cost-push shock"
+        "shock": "cost-push shock",
+        "imported": "imports"
       },
       "TR": {
         "infl": "response to inflation",
         "gap": "response to the gap",
         "shock": "monetary shock",
         "bound": "lower bound"
+      },
+      "IS_open": {
+        "expX": "expected domestic demand"
+      },
+      "NKPC_open": {
+        "exp": "domestic: expectations",
+        "gap": "domestic: gap",
+        "shock": "domestic: cost-push shock"
+      },
+      "UIP": {
+        "expQ": "expected exchange rate",
+        "expPi": "expected inflation",
+        "rate": "domestic rate",
+        "foreignRate": "foreign rate",
+        "premium": "risk premium",
+        "intervention": "CNB interventions"
       }
     },
     "override": {
@@ -359,7 +479,8 @@
     "units": {
       "IS": "% of potential",
       "NKPC": "p.p. p.a.",
-      "TR": "p.p. p.a."
+      "TR": "p.p. p.a.",
+      "UIP": "% (real exchange rate)"
     }
   },
   "diagram": {
@@ -368,14 +489,20 @@
       "demand": "Demand",
       "inflation": "Inflation",
       "bank": "Central bank",
-      "bankShort": "Bank"
+      "bankShort": "Bank",
+      "fx": "Koruna rate",
+      "fxShort": "Koruna"
     },
     "nodeTips": {
       "exp_rational": "Expected gap and inflation next quarter. Under rational expectations they equal next quarter's actual values.",
       "exp_hybrid": "Expected gap and inflation next quarter. Under hybrid expectations they are formed from last quarter; w is the credibility of the inflation target.",
       "demand": "Output gap x: demand relative to potential (IS).",
       "inflation": "Inflation π in % p.a. (NKPC).",
-      "bank": "Nominal rate i and real rate i − Eπ in % p.a. (Taylor rule with a lower bound)."
+      "bank": "Nominal rate i and real rate i − Eπ in % p.a. (Taylor rule with a lower bound).",
+      "fx_rational": "The koruna in CZK/EUR and the real exchange rate q (positive = weaker koruna). Rational investors know the future path of the exchange rate (UIP).",
+      "fx_hybrid": "The koruna in CZK/EUR and the real exchange rate q (positive = weaker koruna). In the hybrid regime investors expect the rate to return gradually towards equilibrium, E q = θ q.",
+      "demand_open": "Output gap x = domestic demand + net exports (IS).",
+      "inflation_open": "Consumer (CPI) inflation in % p.a. = domestic goods + imports."
     },
     "arrows": {
       "expDemand": "m·E x + σ·E π: when people expect higher demand they spend today; higher expected inflation lowers the real rate (IS).",
@@ -387,7 +514,19 @@
       "inflBank": "φπ·π: the bank responds to inflation (TR).",
       "demandBank": "φx·x: the bank responds to the output gap (TR).",
       "shockBank": "v: a monetary shock, the bank deviating from its rule (TR).",
-      "limitBank": "Difference between the actual rate and the rule: the lower bound (the rate cannot go lower), a delayed response, a promise (forward guidance), in the game the player's decision."
+      "limitBank": "Difference between the actual rate and the rule: the lower bound (the rate cannot go lower), a delayed response, a promise (forward guidance), in the game the player's decision.",
+      "expDemand_open": "m·E c + σ·E πᴴ: expected domestic demand and expected inflation (lowers the real rate) (IS).",
+      "expInfl_open": "(1 − α)·β·m·E πᴴ: expected inflation in the prices of domestic goods (NKPC, CPI).",
+      "demandInfl_open": "(1 − α)·κ·x: higher demand raises the prices of domestic goods (NKPC, CPI).",
+      "shockInfl_open": "(1 − α)·u: a cost-push shock in domestic prices (NKPC, CPI).",
+      "expFx": "E q + E πᴴ: the expected future exchange rate and expected inflation, which lowers the domestic real rate (UIP).",
+      "bankFx": "−i: a higher domestic rate attracts capital and strengthens the koruna (UIP).",
+      "interveneFx": "ξ: bank interventions (buying euros) that hold the koruna at the commitment floor (UIP).",
+      "fxInfl": "α·πᶠ: a weaker koruna makes imports dearer and lifts consumer inflation (CPI).",
+      "fxDemand": "δ·q: a weaker koruna makes exports cheaper and imports dearer, net exports rise (IS).",
+      "foreignFx": "i*: a higher foreign rate draws capital away and weakens the koruna (UIP).",
+      "shockFx": "χ: the risk premium investors want for holding koruna (UIP).",
+      "foreignDemand": "γ·y*: foreign demand for Czech exports (IS)."
     },
     "stubs": {
       "bound": "bound",
@@ -403,7 +542,8 @@
       "hybrid": "Hybrid expectations: the forecast is formed from last quarter."
     },
     "credibility": "credibility",
-    "real": "real"
+    "real": "real",
+    "realFx": "real"
   },
   "game": {
     "title": "Be the central bank",
@@ -455,7 +595,11 @@
       "shocksUnit": "p.p. p.a.",
       "naturalDev": "natural rate rⁿ (deviation)",
       "cost": "cost-push shock u",
-      "histNote": "grey strip = history before you took over"
+      "histNote": "grey strip = history before you took over",
+      "fxSeen": "Koruna exchange rate (market, no noise)",
+      "fxMarket": "exchange rate",
+      "foreignDemand": "foreign demand y*",
+      "premium": "risk premium χ"
     },
     "neutral": "neutral",
     "news": {
@@ -463,7 +607,11 @@
       "rn_down": "Firms are cancelling investment and households start saving.",
       "u_up": "Energy and commodity prices are surging.",
       "u_down": "Energy and commodity prices are tumbling.",
-      "none": "No special news."
+      "none": "No special news.",
+      "ystar_up": "The euro area grows faster than expected and demand for Czech exports rises.",
+      "ystar_down": "The euro area slows down and foreign customers cancel orders.",
+      "chi_up": "Investors flee the region and sell the koruna.",
+      "chi_down": "Foreign capital is flowing into the koruna."
     },
     "newsTag": "News",
     "quarterOf": "Quarter {q} of {n}",
@@ -473,7 +621,8 @@
       "vsTarget": "({d} p.p. vs target)",
       "gap": "Output gap",
       "expectations": "Inflation expectations",
-      "lastRate": "Rate last quarter"
+      "lastRate": "Rate last quarter",
+      "fx": "Koruna exchange rate"
     },
     "setRate": "Rate for quarter {q}",
     "noChange": "no change",
@@ -556,6 +705,14 @@
       "deflation": "The government replaced you in {q}: inflation fell to {v}% p.a. and the economy is sliding into deflation. Only the quarters played are reviewed (out of {n} planned).",
       "boom": "The government replaced you in {q}: the economy overheated, output gap {v}%. Only the quarters played are reviewed (out of {n} planned).",
       "slump": "The government replaced you in {q}: a deep recession, output gap {v}%. Only the quarters played are reviewed (out of {n} planned)."
-    }
+    },
+    "economyTip": "The closed economy as in phase 2, or a small open economy with the koruna exchange rate [[UIP]]. In the open economy the rate moves the koruna in the same quarter; the exchange rate then feeds gradually into import prices [[CPI]] and into exports [[IS]]. Foreign shocks are added: euro-area demand, the ECB rate and investor sentiment towards the koruna. You see the exchange rate at once and exactly, because it is a market price."
+  },
+  "economy": {
+    "label": "Economy",
+    "closed": "Closed",
+    "open": "Open",
+    "openShort": "open",
+    "tip": "<b>Closed:</b> the three-equation model of phase 1, unchanged. <b>Open:</b> a small open economy like Czechia. It adds the koruna exchange rate (uncovered interest parity [[UIP]]), imports in the consumer price basket [[CPI]], net exports in demand [[IS]] and foreign shocks: the foreign interest rate, foreign demand and an exchange-rate shock. Without trade (α = δ = γ = 0) the open model gives exactly the same results as the closed one."
   }
 }

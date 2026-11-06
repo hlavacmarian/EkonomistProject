@@ -22,6 +22,6 @@ test('Czech and English translations have the same keys and paragraph counts', (
 test('equation references in texts point to existing equations', () => {
   for (const l of ['cs', 'en']) {
     const text = JSON.stringify(load(l));
-    for (const [, id] of text.matchAll(/\[\[(\w+)\]\]/g)) assert.ok(['IS', 'NKPC', 'TR', 'E'].includes(id), id);
+    for (const [, id] of text.matchAll(/\[\[(\w+)\]\]/g)) assert.ok(['IS', 'NKPC', 'TR', 'E', 'CPI', 'UIP'].includes(id), id);
   }
 });

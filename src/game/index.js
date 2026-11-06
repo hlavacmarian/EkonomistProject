@@ -2,3 +2,4 @@
 export * from './game.js';
 export * from './evaluate.js';
 export { mulberry32, gaussian, normalizeSeed } from './rng.js';
+export { gameModel, shockAt } from './economy.js';

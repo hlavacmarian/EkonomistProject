@@ -38,10 +38,11 @@ export function fmt(v, digits = 2) {
   return out.replace('-', '−');
 }
 
-// Equation references in texts ([[IS]], [[NKPC]], [[TR]], [[E]]) become buttons
+// Equation references in texts ([[IS]], [[NKPC]], [[TR]], [[E]], open economy also
+// [[CPI]] and [[UIP]]) become buttons
 // that highlight the equation.
 export function eqRefs(html) {
-  return String(html).replace(/\[\[(IS|NKPC|TR|E)\]\]/g,
+  return String(html).replace(/\[\[(IS|NKPC|TR|E|CPI|UIP)\]\]/g,
     (_, id) => `<button type="button" class="eqref" data-eq="${id}">(${id})</button>`);
 }
 

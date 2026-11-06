@@ -23,9 +23,10 @@ function loadSettings() {
       length: Number.isInteger(s.length) && s.length >= GAME_LENGTH.min && s.length <= GAME_LENGTH.max ? s.length : GAME_DEFAULTS.length,
       difficulty: DIFFICULTY[s.difficulty] ? s.difficulty : GAME_DEFAULTS.difficulty,
       seed: Number.isInteger(s.seed) && s.seed > 0 ? s.seed : GAME_DEFAULTS.seed,
+      economy: s.economy === 'open' ? 'open' : 'closed',
     };
   } catch {
-    return { length: GAME_DEFAULTS.length, difficulty: GAME_DEFAULTS.difficulty, seed: GAME_DEFAULTS.seed };
+    return { length: GAME_DEFAULTS.length, difficulty: GAME_DEFAULTS.difficulty, seed: GAME_DEFAULTS.seed, economy: 'closed' };
   }
 }
 function saveSettings(s) {
@@ -48,6 +49,7 @@ export function createGameView(root, { equationsHtml }) {
   let live = null;
 
   const W = () => ui.game.warmup;
+  const open = () => ui.game?.config.economy === 'open';
   const qNum = (k) => k - W() + 1;
   const xLabel = (k) => String(qNum(k));
   const quarterLabel = (k) => (k < W() ? t('game.qHistory', { q: qNum(k) }) : t('game.qGame', { q: qNum(k), n: ui.game.config.length }));
@@ -87,6 +89,12 @@ export function createGameView(root, { equationsHtml }) {
             ${tipBox('length', t('game.lengthTip'))}
           </div>
           <div class="ctl">
+            <div class="ctl-head"><label>${t('economy.label')}</label>${infoButton('economy')}</div>
+            <div class="seg" role="group" aria-label="${t('economy.label')}">${['closed', 'open'].map((e) =>
+    `<button type="button" data-geconomy="${e}" aria-pressed="${s.economy === e}">${t(`economy.${e}`)}</button>`).join('')}</div>
+            ${tipBox('economy', t('game.economyTip'))}
+          </div>
+          <div class="ctl">
             <div class="ctl-head"><label>${t('game.difficultyLabel')}</label>${infoButton('difficulty')}</div>
             <div class="seg" role="group" aria-label="${t('game.difficultyLabel')}">${diffButtons}</div>
             ${tipBox('difficulty', t('game.difficultyTip', { easy: fmt(DIFFICULTY.easy, 2), hard: fmt(DIFFICULTY.hard, 2) }))}
@@ -105,7 +113,7 @@ export function createGameView(root, { equationsHtml }) {
           <h2>${t('sections.explain')}</h2>
           ${t('game.explain').map((x) => `<p>${eqRefs(x)}</p>`).join('')}
           <p class="note">${t('game.lossNote', { wg: fmt(LOSS_WEIGHTS.gap, 2), wr: fmt(LOSS_WEIGHTS.rate, 2) })}</p>
-          <div class="game-eqs">${equationsHtml()}</div>
+          <div class="game-eqs">${equationsHtml(ui.settings.economy)}</div>
         </section>
       </div>`;
   }
@@ -113,7 +121,7 @@ export function createGameView(root, { equationsHtml }) {
   function start(seed = ui.settings.seed) {
     ui.settings.seed = seed;
     saveSettings(ui.settings);
-    ui.game = createGame({ seed, length: ui.settings.length, difficulty: ui.settings.difficulty });
+    ui.game = createGame({ seed, length: ui.settings.length, difficulty: ui.settings.difficulty, economy: ui.settings.economy });
     ui.rate = clampRate(observe(ui.game).lastRate, ui.game.params);
     ui.ev = null;
     ui.phase = 'play';
@@ -133,6 +141,7 @@ export function createGameView(root, { equationsHtml }) {
           <div class="charts">
             <div id="g-c-inflation"></div><div id="g-c-gap"></div>
             <div id="g-c-rate"></div><div id="g-c-expect"></div>
+            ${open() ? '<div id="g-c-fx" class="wide"></div>' : ''}
           </div>
         </section>
       </div>`;
@@ -141,6 +150,7 @@ export function createGameView(root, { equationsHtml }) {
       ['gap', 'game.charts.gapSeen', 'charts.gapUnit'],
       ['rate', 'game.charts.rateYours', 'charts.nominalUnit'],
       ['expect', 'game.charts.expectSeen', 'charts.inflationUnit'],
+      ...(open() ? [['fx', 'game.charts.fxSeen', 'charts.fxUnit']] : []),
     ];
     charts = defs.map(([id, title, unit]) => {
       const c = createChart(root.querySelector(`#g-c-${id}`), { title: t(title), unit: t(unit), onHover: () => {} });
@@ -168,6 +178,7 @@ export function createGameView(root, { equationsHtml }) {
       if (c.id === 'gap') c.update({ ...common, series: lineOf('gap', t('game.charts.seen')), refs: [] });
       if (c.id === 'rate') c.update({ ...common, series: lineOf('rate', t('game.charts.yourRate')), refs: [{ y: p.lowerBoundAnn, label: `${t('charts.lowerBound')} ${fmt(p.lowerBoundAnn, 2)} %` }, { y: o.neutral, label: `${t('game.neutral')} ${fmt(o.neutral, 1)} %` }] });
       if (c.id === 'expect') c.update({ ...common, series: lineOf('expectations', t('game.charts.survey')), refs: [{ y: p.targetAnn, label: `${t('charts.target')} ${fmt(p.targetAnn, 1)} %` }] });
+      if (c.id === 'fx') c.update({ ...common, maxHeight: 200, series: lineOf('fx', t('game.charts.fxMarket')), refs: [{ y: p.eurCzk, label: `${t('charts.fxSteady')} ${fmt(p.eurCzk, 2)}` }] });
     }
 
     const move = ui.rate - o.lastRate;
@@ -187,6 +198,7 @@ export function createGameView(root, { equationsHtml }) {
           <dt>${t('game.data.gap')}</dt><dd>${fmt(last.gap, 1)} %</dd>
           <dt>${t('game.data.expectations')}</dt><dd>${fmt(last.expectations, 1)} %</dd>
           <dt>${t('game.data.lastRate')}</dt><dd>${fmt(o.lastRate, 2)} %</dd>
+          ${open() ? `<dt>${t('game.data.fx')}</dt><dd>${fmt(last.fx, 2)} <small>CZK/EUR</small></dd>` : ''}
         </dl>
       </div>
       <div class="g-rate">
@@ -297,7 +309,7 @@ export function createGameView(root, { equationsHtml }) {
 
     root.innerHTML = `
       <section class="card verdict">
-        <h2>${t('game.reviewTitle')} <small>${t('game.reviewMeta', { seed: g.config.seed, n: g.config.length, d: t(`game.difficulty.${g.config.difficulty}`) })}</small></h2>
+        <h2>${t('game.reviewTitle')} <small>${t('game.reviewMeta', { seed: g.config.seed, n: g.config.length, d: t(`game.difficulty.${g.config.difficulty}`) })} · ${t(`economy.${g.config.economy}`)}</small></h2>
         <p class="verdict-line">${verdict(ev)}</p>
         <div class="table-wrap"><table>
           <thead><tr><th>${t('game.table.run')}</th><th>${t('game.table.loss')}</th><th>${t('game.table.inflation')}</th><th>${t('game.table.gap')}</th><th>${t('game.table.rate')}</th><th>${t('game.table.inBand')}</th><th>${t('game.table.credibility')}</th></tr></thead>
@@ -316,10 +328,12 @@ export function createGameView(root, { equationsHtml }) {
         <span class="legend-item"><svg width="22" height="8" aria-hidden="true"><circle cx="11" cy="4" r="3" style="fill:var(--s1)" opacity="0.5"/></svg>${t('game.charts.seenYou')}</span>
         <span class="legend-item">${swatch('var(--natural)')}${t('game.charts.naturalDev')}</span>
         <span class="legend-item">${swatch('var(--s2)')}${t('game.charts.cost')}</span>
+        ${open() ? `<span class="legend-item">${swatch('var(--c-foreign)')}${t('game.charts.foreignDemand')}</span><span class="legend-item">${swatch('var(--c-fx)')}${t('game.charts.premium')}</span>` : ''}
         <span class="legend-note">${t('game.charts.histNote')}</span></div>
       <div class="charts g-result-charts">
         <div id="g-r-inflation"></div><div id="g-r-gap"></div>
         <div id="g-r-rate"></div><div id="g-r-w"></div>
+        ${open() ? '<div id="g-r-fx" class="wide"></div>' : ''}
         <div id="g-r-shocks" class="wide"></div>
       </div>
       <article class="card" id="g-live"></article>
@@ -353,11 +367,21 @@ export function createGameView(root, { equationsHtml }) {
       ...common, series: runsFor('rate'), refs: [{ y: p.lowerBoundAnn, label: `${t('charts.lowerBound')} ${fmt(p.lowerBoundAnn, 2)} %` }],
     });
     mk('w', 'charts.anchoring', 'charts.anchoringUnit').update({ ...common, series: runsFor('w'), refs: [], yDomain: [0, 1], maxHeight: 220 });
+    if (open()) {
+      mk('fx', 'charts.fx', 'charts.fxUnit').update({
+        ...common, maxHeight: 220, series: runsFor('fx'), refs: [{ y: p.eurCzk, label: `${t('charts.fxSteady')} ${fmt(p.eurCzk, 2)}` }],
+      });
+    }
+    const L = ev.levels.player;
     mk('shocks', 'game.charts.shocks', 'game.charts.shocksUnit').update({
       ...common, maxHeight: 200, refs: [{ y: 0, label: '' }],
       series: [
-        { key: 'rn', label: t('game.charts.naturalDev'), color: 'var(--natural)', width: 2, values: ev.levels.player.natural.map((v) => v - p.neutralRealAnn) },
-        { key: 'u', label: t('game.charts.cost'), color: 'var(--s2)', width: 2, values: ev.levels.player.cost },
+        { key: 'rn', label: t('game.charts.naturalDev'), color: 'var(--natural)', width: 2, values: L.natural.map((v) => v - p.neutralRealAnn) },
+        { key: 'u', label: t('game.charts.cost'), color: 'var(--s2)', width: 2, values: L.cost },
+        ...(open() ? [
+          { key: 'ystar', label: t('game.charts.foreignDemand'), color: 'var(--c-foreign)', width: 1.75, values: L.foreignDemand },
+          { key: 'chi', label: t('game.charts.premium'), color: 'var(--c-fx)', width: 1.75, values: L.premium },
+        ] : []),
       ],
     });
 
@@ -431,6 +455,10 @@ export function createGameView(root, { equationsHtml }) {
       box.hidden = !open;
       btn.setAttribute('aria-expanded', String(open));
       if (open) ui.openTips.add(id); else ui.openTips.delete(id);
+    } else if (btn.dataset.geconomy) {
+      ui.settings.economy = btn.dataset.geconomy;
+      saveSettings(ui.settings);
+      render(); // the equations shown next to the rules depend on the economy
     } else if (btn.dataset.diff) {
       ui.settings.difficulty = btn.dataset.diff;
       saveSettings(ui.settings);

@@ -15,6 +15,12 @@
 //              + (i − max(lb, s))       decision outside the rule (delay, promise, player)
 //
 // m = 1 in the hybrid regime. Every block sums exactly to its variable.
+//
+// Open economy (sol.economy === 'open', see open.js):
+//   (IS)   x  = m·E c + σ·E πH − σ·i + σ·rn + δ·q (net exports: exchange rate) + γ·y* (foreign demand)
+//   (NKPC) π  = (1−α)·[β·m·E πH + κ·x + u] + α·πF     CPI = domestic goods + imported goods
+//   (UIP)  q  = E q + E πH − i + i* + χ + ξ             expected rate, real-rate gap, premium, interventions
+//   (TR)   as above, with the inflation the rule reacts to (CPI or domestic)
 
 export const TERMS = Object.freeze({
   IS: ['expX', 'expPi', 'rate', 'natural'],
@@ -22,11 +28,67 @@ export const TERMS = Object.freeze({
   TR: ['infl', 'gap', 'shock', 'bound', 'override'],
 });
 
-// Display scale per block: the gap stays in % of potential, inflation and the
-// nominal rate are annualized (p.p. p.a. relative to target / neutral rate).
-export const DISPLAY_SCALE = Object.freeze({ IS: 1, NKPC: 4, TR: 4 });
+export const OPEN_TERMS = Object.freeze({
+  IS: ['expX', 'expPi', 'rate', 'natural', 'fx', 'foreign'],
+  NKPC: ['exp', 'gap', 'shock', 'imported'],
+  UIP: ['expQ', 'expPi', 'rate', 'foreignRate', 'premium', 'intervention'],
+  TR: ['infl', 'gap', 'shock', 'bound', 'override'],
+});
+
+export const termsFor = (economy) => (economy === 'open' ? OPEN_TERMS : TERMS);
+
+// Display scale per block: the gap and the exchange rate stay in %, inflation and
+// the nominal rate are annualized (p.p. p.a. relative to target / neutral rate).
+export const DISPLAY_SCALE = Object.freeze({ IS: 1, NKPC: 4, UIP: 1, TR: 4 });
+
+function decomposeOpen(sol, p) {
+  const m = sol.mode === 'rational' ? (p.expDiscount ?? 1) : 1;
+  const { beta, sigma, kappa, phiPi, phiX, alpha, delta, gamma } = p;
+  const omega = p.ruleDomestic || 0;
+  const n = sol.x.length;
+  const out = {};
+  for (const [block, keys] of Object.entries(OPEN_TERMS)) {
+    out[block] = Object.fromEntries([...keys, 'total'].map((k) => [k, new Array(n).fill(0)]));
+  }
+  for (let t = 0; t < n; t++) {
+    const { IS, NKPC, UIP, TR } = out;
+    IS.expX[t] = m * sol.Ex[t];
+    IS.expPi[t] = sigma * sol.Epi[t];
+    IS.rate[t] = -sigma * sol.i[t];
+    IS.natural[t] = sigma * sol.rn[t];
+    IS.fx[t] = delta * sol.q[t];
+    IS.foreign[t] = gamma * sol.ystar[t];
+    IS.total[t] = sol.x[t];
+
+    NKPC.exp[t] = (1 - alpha) * beta * m * sol.Epi[t];
+    NKPC.gap[t] = (1 - alpha) * kappa * sol.x[t];
+    NKPC.shock[t] = (1 - alpha) * sol.u[t];
+    NKPC.imported[t] = alpha * sol.piF[t];
+    NKPC.total[t] = sol.pi[t];
+
+    UIP.expQ[t] = sol.Eq[t];
+    UIP.expPi[t] = sol.Epi[t];
+    UIP.rate[t] = -sol.i[t];
+    UIP.foreignRate[t] = sol.istar[t];
+    UIP.premium[t] = sol.chi[t];
+    UIP.intervention[t] = sol.xi[t];
+    UIP.total[t] = sol.q[t];
+
+    const piR = (1 - omega) * sol.pi[t] + omega * sol.piH[t];
+    const shadow = phiPi * piR + phiX * sol.x[t] + sol.v[t];
+    const ruled = Math.max(sol.lb, shadow);
+    TR.infl[t] = phiPi * piR;
+    TR.gap[t] = phiX * sol.x[t];
+    TR.shock[t] = sol.v[t];
+    TR.bound[t] = ruled - shadow;
+    TR.override[t] = sol.i[t] - ruled;
+    TR.total[t] = sol.i[t];
+  }
+  return out;
+}
 
 export function decompose(sol, p) {
+  if (sol.economy === 'open') return decomposeOpen(sol, p);
   const m = sol.mode === 'rational' ? (p.expDiscount ?? 1) : 1;
   const { beta, sigma, kappa, phiPi, phiX } = p;
   const n = sol.x.length;
@@ -66,7 +128,7 @@ export function decompose(sol, p) {
 export function decomposeDisplay(sol, p) {
   const dec = decompose(sol, p);
   for (const [block, scale] of Object.entries(DISPLAY_SCALE)) {
-    if (scale === 1) continue;
+    if (scale === 1 || !dec[block]) continue;
     for (const k of Object.keys(dec[block])) dec[block][k] = dec[block][k].map((v) => v * scale);
   }
   return dec;
@@ -91,10 +153,27 @@ export const FLOW_TARGET = Object.freeze({
   inflBank: 'bank', demandBank: 'bank', shockBank: 'bank', limitBank: 'bank',
 });
 
+// Open economy: the exchange rate is one more node.
+//   fxDemand      exchange rate -> demand (net exports)      δ·q
+//   foreignDemand foreign demand -> demand                    γ·y*
+//   fxInfl        exchange rate -> inflation (import prices)  α·πF
+//   expFx         expectations -> exchange rate               E q + E πH
+//   bankFx        bank -> exchange rate (interest rate)       −i
+//   foreignFx     foreign rate -> exchange rate               i*
+//   shockFx       risk premium -> exchange rate               χ
+//   interveneFx   bank interventions -> exchange rate         ξ
+export const OPEN_FLOW_TARGET = Object.freeze({
+  ...FLOW_TARGET,
+  fxDemand: 'demand', foreignDemand: 'demand', fxInfl: 'inflation',
+  expFx: 'fx', bankFx: 'fx', foreignFx: 'fx', shockFx: 'fx', interveneFx: 'fx',
+});
+
+export const flowTargetFor = (economy) => (economy === 'open' ? OPEN_FLOW_TARGET : FLOW_TARGET);
+
 export function causalFlows(dec) {
   const n = dec.IS.total.length;
   const map = (f) => Array.from({ length: n }, (_, t) => f(t));
-  return {
+  const flows = {
     expDemand: map((t) => dec.IS.expX[t] + dec.IS.expPi[t]),
     bankDemand: dec.IS.rate.slice(),
     shockDemand: dec.IS.natural.slice(),
@@ -106,4 +185,17 @@ export function causalFlows(dec) {
     shockBank: dec.TR.shock.slice(),
     limitBank: map((t) => dec.TR.bound[t] + dec.TR.override[t]),
   };
+  if (dec.UIP) {
+    Object.assign(flows, {
+      fxDemand: dec.IS.fx.slice(),
+      foreignDemand: dec.IS.foreign.slice(),
+      fxInfl: dec.NKPC.imported.slice(),
+      expFx: map((t) => dec.UIP.expQ[t] + dec.UIP.expPi[t]),
+      bankFx: dec.UIP.rate.slice(),
+      foreignFx: dec.UIP.foreignRate.slice(),
+      shockFx: dec.UIP.premium.slice(),
+      interveneFx: dec.UIP.intervention.slice(),
+    });
+  }
+  return flows;
 }

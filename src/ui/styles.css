@@ -32,6 +32,8 @@
   --c-infl: #eb6834;
   --c-bound: #e0a100;
   --c-override: #8a6a3b;
+  --c-fx: #0f8f9a;
+  --c-foreign: #4a5aa8;
   --hist: rgba(137, 135, 129, 0.12);
   --hband: rgba(27, 175, 122, 0.1);
   --radius: 10px;
@@ -72,6 +74,10 @@
     --c-infl: #d95926;
     --c-bound: #d9a21b;
     --c-override: #b8946a;
+  --c-fx: #2bb3bd;
+  --c-foreign: #8b98e0;
+    --c-fx: #2bb3bd;
+    --c-foreign: #8b98e0;
     --hist: rgba(195, 194, 183, 0.08);
     --hband: rgba(25, 158, 112, 0.14);
   }
@@ -398,6 +404,8 @@ td .sw { display: inline-block; vertical-align: middle; margin-right: 6px; }
 .lg-arrow.down { background: var(--down); }
 .lg-arrow.info { height: 0; border-top: 2px dotted var(--muted); border-radius: 0; }
 .bars-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.bars-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card h2 small { font-weight: 400; color: var(--muted); font-size: 0.82rem; margin-left: 6px; }
 
 .diagram { width: 100%; min-width: 0; }
 .diagram svg { display: block; width: 100%; height: auto; overflow: visible; }
@@ -511,7 +519,7 @@ td .sw { display: inline-block; vertical-align: middle; margin-right: 6px; }
   .foot { padding: 0 16px 16px; }
   .tabs { padding: 0 16px; }
   .game-view { padding: 0 16px 16px; }
-  .bars-grid { grid-template-columns: minmax(0, 1fr); }
+  .bars-grid, .bars-grid.four { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 620px) {
   .charts { grid-template-columns: minmax(0, 1fr); }

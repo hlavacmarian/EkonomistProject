@@ -29,18 +29,32 @@ const norm = (a, b) => {
   return { x: dx / l, y: dy / l };
 };
 
-function layout(W) {
+// Open economy: the exchange rate sits top right, above the bank; net exports are
+// routed around the top of the drawing into the demand node.
+function layout(W, open = false) {
   const compact = W < 540;
   const pad = 6;
+  const padL = open ? (compact ? 16 : 22) : pad;
   const gap = compact ? 36 : 64;
-  const bw = (W - 2 * pad - 2 * gap) / 3;
+  const bw = (W - padL - pad - 2 * gap) / 3;
   const bh = compact ? 58 : 66;
-  const ew = Math.min(W - 2 * pad, compact ? 250 : 300);
   const eh = compact ? 66 : 72;
-  const exp = { x: (W - ew) / 2, y: 6, w: ew, h: eh };
+  const fxStub = compact ? 24 : 28;
+  const top = open ? fxStub + (compact ? 30 : 34) : 6;
+  const box = (k, y) => ({ x: padL + k * (bw + gap), y, w: bw, h: bh });
+  let exp;
+  if (open) {
+    const I0 = box(1, 0);
+    const right = I0.x + bw / 2 + Math.max(24, 0.22 * bw);
+    const left = Math.max(padL, right - (compact ? 220 : 340));
+    exp = { x: left, y: top, w: right - left, h: eh };
+  } else {
+    const ew = Math.min(W - 2 * pad, compact ? 250 : 300);
+    exp = { x: (W - ew) / 2, y: top, w: ew, h: eh };
+  }
   const yLow = exp.y + eh + (compact ? 100 : 116);
-  const box = (k) => ({ x: pad + k * (bw + gap), y: yLow, w: bw, h: bh });
-  const nodes = { exp, demand: box(0), inflation: box(1), bank: box(2) };
+  const nodes = { exp, demand: box(0, yLow), inflation: box(1, yLow), bank: box(2, yLow) };
+  if (open) nodes.fx = { x: nodes.bank.x, y: top, w: bw, h: eh };
   for (const n of Object.values(nodes)) { n.cx = n.x + n.w / 2; n.cy = n.y + n.h / 2; }
   const { demand: D, inflation: I, bank: B } = nodes;
   const bottom = yLow + bh;
@@ -58,15 +72,15 @@ function layout(W) {
   const arc = (a, b, depth) => ({ type: 'arc', a, b, depth, label: { x: (a.x + b.x) / 2, y: a.y + depth * 0.75 + 15 } });
   // Shock stubs enter a node from above; labels at the outer edges are aligned
   // inwards so they never leave the drawing.
-  const stubAt = (x, node, anchor = 'middle') => ({
-    type: 'line', stub: true, a: { x, y: node.y - stub }, b: { x, y: node.y },
-    label: { x: anchor === 'end' ? x + 8 : anchor === 'start' ? x - 6 : x, y: node.y - stub - 6, anchor },
+  const stubAt = (x, node, anchor = 'middle', lift = 0, len = stub) => ({
+    type: 'line', stub: true, a: { x, y: node.y - len - lift }, b: { x, y: node.y },
+    label: { x: anchor === 'end' ? x + 8 : anchor === 'start' ? x - 6 : x, y: node.y - len - lift - 6, anchor },
   });
 
   const expDemandA = { x: exp.x + exp.w * 0.16, y: exp.y + eh };
   const expDemandB = { x: D.cx + D.w * 0.14, y: yLow };
   const arrows = {
-    expDemand: line(expDemandA, expDemandB, 1, 14, 0.36),
+    expDemand: line(expDemandA, expDemandB, 1, 14, open ? 0.2 : 0.36),
     expInfl: line({ x: I.cx - 9, y: exp.y + eh }, { x: I.cx - 9, y: yLow }, 1, 12, 0.4),
     demandInfl: { ...line({ x: D.x + D.w, y: midY }, { x: I.x, y: midY }), label: { x: (D.x + D.w + I.x) / 2, y: midY - 9 } },
     inflBank: { ...line({ x: I.x + I.w, y: midY }, { x: B.x, y: midY }), label: { x: (I.x + I.w + B.x) / 2, y: midY - 9 } },
@@ -74,9 +88,28 @@ function layout(W) {
     bankDemand: arc({ x: B.cx + B.w * 0.26, y: bottom }, { x: D.cx - D.w * 0.26, y: bottom }, outer),
     shockDemand: stubAt(D.x + Math.min(18, D.w * 0.16), D, 'start'),
     shockInfl: stubAt(I.x + I.w - Math.min(18, I.w * 0.16), I, 'start'),
-    shockBank: stubAt(B.x + B.w * 0.3, B),
-    limitBank: stubAt(B.x + B.w - Math.min(18, B.w * 0.16), B, 'end'),
+    shockBank: stubAt(B.x + B.w * (open ? 0.12 : 0.3), B),
+    limitBank: stubAt(B.x + B.w - Math.min(18, B.w * 0.16), B, 'end', open ? (compact ? 26 : 20) : 0),
   };
+  if (open) {
+    const F = nodes.fx;
+    const fBottom = F.y + F.h;
+    Object.assign(arrows, {
+      expFx: { ...line({ x: exp.x + exp.w, y: F.y + F.h / 2 }, { x: F.x, y: F.y + F.h / 2 }), label: { x: (exp.x + exp.w + F.x) / 2, y: F.y + F.h / 2 - 9 } },
+      bankFx: line({ x: B.cx - 10, y: yLow }, { x: B.cx - 10, y: fBottom }, -1, 12, 0.5),
+      interveneFx: line({ x: B.cx + 10, y: yLow }, { x: B.cx + 10, y: fBottom }, 1, 12, 0.5),
+      fxInfl: line({ x: F.x + F.w * 0.12, y: fBottom }, { x: I.x + I.w, y: yLow + bh * 0.22 }, 1, 10, 0.62),
+      fxDemand: {
+        type: 'route', a: { x: F.x + F.w * 0.3, y: F.y }, topY: F.y - (compact ? 16 : 18), leftX: D.x - 11,
+        b: { x: D.x, y: yLow + bh * 0.45 },
+        label: { x: (F.x + F.w * 0.3 + D.x) / 2, y: F.y - (compact ? 22 : 24) },
+      },
+      foreignFx: stubAt(F.x + F.w * 0.62, F, 'middle', 0, fxStub),
+      shockFx: stubAt(F.x + F.w - Math.min(16, F.w * 0.14), F, 'end', 0, fxStub),
+      foreignDemand: stubAt(D.x + Math.min(36, D.w * 0.32), D, 'start', compact ? 15 : 16),
+    });
+    arrows.fxInfl.label.anchor = 'end';
+  }
   // Dotted information arrows: expectations are formed from the variables
   // (parallel to the causal arrows, on their inner side, pointing up).
   const d = norm(expDemandA, expDemandB);
@@ -99,11 +132,22 @@ function layout(W) {
     infoInfl: { type: 'line', a: { x: I.cx + 9, y: yLow }, b: { x: I.cx + 9, y: exp.y + eh }, label: { x: I.cx + 14, y: yLow + (exp.y + eh - yLow) * upper + 4 } },
   };
   const height = Math.ceil(bottom + outer * 0.75 + 24);
-  return { compact, nodes, arrows, info, width: W, height };
+  return { compact, open, nodes, arrows, info, width: W, height };
 }
 
 // Geometry of a shaft that ends at the base of its arrowhead, plus the head itself.
 function shaft(g, head) {
+  if (g.type === 'route') {
+    // Up, left along the top, down the left margin, then right into the node.
+    const r = 10;
+    const { a, b, topY, leftX } = g;
+    const end = { x: b.x - head, y: b.y };
+    return {
+      d: `M ${a.x} ${a.y} L ${a.x} ${topY + r} Q ${a.x} ${topY} ${a.x - r} ${topY} L ${leftX + r} ${topY}`
+        + ` Q ${leftX} ${topY} ${leftX} ${topY + r} L ${leftX} ${b.y - r} Q ${leftX} ${b.y} ${leftX + r} ${b.y} L ${end.x} ${end.y}`,
+      tip: b, dir: { x: 1, y: 0 },
+    };
+  }
   if (g.type === 'arc') {
     const end = { x: g.b.x, y: g.b.y + head };
     return {
@@ -137,7 +181,7 @@ export function createDiagram(container) {
     if (!data) return;
     const W = Math.max(300, Math.round(container.clientWidth));
     lastWidth = W;
-    geo = layout(W);
+    geo = layout(W, data.economy === 'open');
     svg.setAttribute('viewBox', `0 0 ${W} ${geo.height}`);
     svg.setAttribute('width', W);
     svg.setAttribute('height', geo.height);
@@ -180,7 +224,7 @@ export function createDiagram(container) {
       const title = el('text', { x: r.cx, y: r.y + (geo.compact ? 17 : 20), 'text-anchor': 'middle', class: 'node-title' }, grp);
       title.textContent = geo.compact ? tx.nodesShort[key] : tx.nodes[key];
       const lines = [];
-      const count = key === 'exp' ? (data.mode === 'hybrid' ? 3 : 2) : key === 'bank' ? 2 : 1;
+      const count = key === 'exp' ? (data.mode === 'hybrid' ? 3 : 2) : key === 'bank' || key === 'fx' ? 2 : 1;
       if (key === 'exp') {
         // Expectations: values side by side on one line, credibility below.
         const v = el('text', { x: r.cx, y: r.y + (geo.compact ? 37 : 42), 'text-anchor': 'middle', class: 'node-value small' }, grp);
@@ -221,16 +265,24 @@ export function createDiagram(container) {
           const o = Math.abs(data.limitSplit.override[q] || 0);
           name = b >= o ? tx.stubs.bound : tx.stubs.override;
         }
-        // Channels that stay silent over the whole horizon are hidden.
-        r.grp.style.display = data.active[key] ? '' : 'none';
-        text = `${name} ${text}`;
+        // In the narrow open layout the inputs carry only their names (values are
+        // in the breakdown next to the diagram and in the arrow widths).
+        if (geo.compact && geo.open) text = name || text;
+        else if (name) text = `${name} ${text}`;
       }
+      // Channels that stay silent over the whole horizon are hidden.
+      if (r.g.stub || key === 'interveneFx') r.grp.style.display = data.active[key] ? '' : 'none';
       r.label.textContent = text;
     }
     const val = data.values;
     const f = data.formatLevel;
     const n = refs.nodes;
-    n.exp[0].textContent = `Eπ ${f(val.Epi[q], 1)} % · Ex ${f(val.Ex[q], 1)} %`;
+    const open = data.economy === 'open';
+    n.exp[0].textContent = open ? `Eπᴴ ${f(val.Epi[q], 1)} % · Ec ${f(val.Ex[q], 1)} %` : `Eπ ${f(val.Epi[q], 1)} % · Ex ${f(val.Ex[q], 1)} %`;
+    if (open) {
+      n.fx[0].textContent = geo.compact ? f(val.fx[q], 2) : `${f(val.fx[q], 2)} CZK/EUR`;
+      n.fx[1].textContent = `${tx.realFx} ${val.q[q] > 0.005 ? '+' : ''}${f(val.q[q], 1)} %`;
+    }
     if (n.exp[1]) n.exp[1].textContent = `${tx.credibility} w = ${f(val.w[q], 2)}`;
     n.demand[0].textContent = `x ${f(val.x[q], 2)} %`;
     n.inflation[0].textContent = `π ${f(val.pi[q], 2)} %`;
@@ -244,8 +296,8 @@ export function createDiagram(container) {
   ro.observe(container);
 
   return {
-    // data = { flows, maxFlow, values: {x, pi, i, r, Epi, Ex, w}, limitSplit: {bound, override},
-    //          mode, texts, format(v), formatLevel(v, digits) }
+    // data = { flows, maxFlow, values: {x, pi, i, r, Epi, Ex, w, fx?, q?}, limitSplit: {bound, override},
+    //          mode, economy, texts, format(v), formatLevel(v, digits) }
     update(next) {
       const active = {};
       for (const [k, arr] of Object.entries(next.flows)) active[k] = arr.some((v) => Math.abs(v) > EPS);

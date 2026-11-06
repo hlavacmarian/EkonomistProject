@@ -10,10 +10,15 @@
 // Random shocks and measurement noise are drawn from a seeded generator, one fixed
 // block of draws per quarter, so the same seed always gives the same game (and a
 // longer game with the same seed starts with exactly the same quarters).
+//
+// The game can be played in the closed economy or in the small open economy
+// (config.economy = 'open'): foreign shocks then come from a separate stream of
+// the same seed, so the domestic shocks of a seed are the same in both.
 
 import { withDefaults, lowerBoundDev, steadyNominalAnn } from '../model/params.js';
-import { stepHybrid, initialHybridState } from '../model/hybrid.js';
+import { fxLevel } from '../model/open.js';
 import { mulberry32, gaussian, normalizeSeed } from './rng.js';
+import { gameModel, shockAt } from './economy.js';
 
 export const RATE_STEP = 0.25;
 export const GAME_LENGTH = Object.freeze({ min: 8, max: 40, step: 1 });
@@ -24,6 +29,7 @@ export const GAME_DEFAULTS = Object.freeze({
   length: 24,
   difficulty: 'medium',
   warmup: 4,
+  economy: 'closed',
 });
 
 // Credibility starts below its ceiling and has to be earned (see hybrid.js).
@@ -45,6 +51,15 @@ export const SHOCK_PROCESS = Object.freeze({
   u: { rho: 0.7, sd: 0.4, eventProb: 0.06, eventSize: 4, eventUp: 0.75 },
 });
 
+// Foreign shocks of the open economy (foreign rate and risk premium in annualized
+// p.p., foreign demand in % of potential); events make the news too.
+export const FOREIGN_PROCESS = Object.freeze({
+  istar: { rho: 0.9, sd: 0.15, eventProb: 0, eventSize: 0, eventUp: 0.5 },
+  ystar: { rho: 0.8, sd: 0.4, eventProb: 0.05, eventSize: 3, eventUp: 0.4 },
+  chi: { rho: 0.7, sd: 0.7, eventProb: 0.05, eventSize: 3.5, eventUp: 0.6 },
+});
+const SCALE = { rn: 4, u: 4, istar: 4, ystar: 1, chi: 4 };
+
 // Measurement noise of the first data release (standard deviations): the output
 // gap is much harder to measure than inflation.
 export const NOISE = Object.freeze({ inflation: 0.3, gap: 0.9, expectations: 0.2 });
@@ -64,8 +79,20 @@ export function rateToLevel(i, p) {
 }
 export const inflationLevel = (pi, p) => 4 * pi + p.targetAnn;
 
+// One AR(1) process with events: fills ann[k] and news[k].
+function evolve(sp, z, e, k, prev, scale, calm, warmup, kind, news) {
+  let innovation = calm * scale * sp.sd * z;
+  if (k >= warmup && e < sp.eventProb) {
+    // Rescale the uniform below eventProb to a fresh uniform for the sign.
+    const up = e / sp.eventProb < sp.eventUp;
+    innovation += (up ? 1 : -1) * scale * sp.eventSize * sp.sd;
+    if (!news[k] || Math.abs(innovation / sp.sd) > Math.abs(news[k].size)) news[k] = { kind, sign: up ? 1 : -1, size: innovation / sp.sd };
+  }
+  return sp.rho * prev + innovation;
+}
+
 // Shocks, measurement noise and news for T quarters from one seed.
-export function drawGame(seed, T, difficulty = 'medium', warmup = 0) {
+export function drawGame(seed, T, difficulty = 'medium', warmup = 0, economy = 'closed') {
   const rand = mulberry32(normalizeSeed(seed));
   const scale = DIFFICULTY[difficulty] ?? DIFFICULTY.medium;
   const ann = { rn: new Array(T).fill(0), u: new Array(T).fill(0) };
@@ -81,26 +108,31 @@ export function drawGame(seed, T, difficulty = 'medium', warmup = 0) {
     noise.expectations.push(NOISE.expectations * gaussian(rand));
     const calm = k < warmup ? 0.5 : 1;
     for (const kind of ['rn', 'u']) {
-      const sp = SHOCK_PROCESS[kind];
-      let innovation = calm * scale * sp.sd * z[kind];
-      if (k >= warmup && e[kind] < sp.eventProb) {
-        // Rescale the uniform below eventProb to a fresh uniform for the sign.
-        const up = e[kind] / sp.eventProb < sp.eventUp;
-        innovation += (up ? 1 : -1) * scale * sp.eventSize * sp.sd;
-        if (!news[k] || Math.abs(innovation) > Math.abs(news[k].size)) news[k] = { kind, sign: up ? 1 : -1, size: innovation };
-      }
-      ann[kind][k] = sp.rho * prev[kind] + innovation;
+      ann[kind][k] = evolve(SHOCK_PROCESS[kind], z[kind], e[kind], k, prev[kind], scale, calm, warmup, kind, news);
       prev[kind] = ann[kind][k];
     }
   }
-  const paths = { rn: ann.rn.map((v) => v / 4), u: ann.u.map((v) => v / 4), v: new Array(T).fill(0) };
+  if (economy === 'open') {
+    // Separate stream: the domestic draws of a seed do not depend on the economy.
+    const frand = mulberry32((normalizeSeed(seed) ^ 0x5bd1e995) >>> 0 || 1);
+    const fnews = new Array(T).fill(null);
+    for (const kind of Object.keys(FOREIGN_PROCESS)) { ann[kind] = new Array(T).fill(0); prev[kind] = 0; }
+    for (let k = 0; k < T; k++) {
+      const draws = Object.keys(FOREIGN_PROCESS).map((kind) => [kind, gaussian(frand), frand()]);
+      const calm = k < warmup ? 0.5 : 1;
+      for (const [kind, z, e] of draws) {
+        ann[kind][k] = evolve(FOREIGN_PROCESS[kind], z, e, k, prev[kind], scale, calm, warmup, kind, fnews);
+        prev[kind] = ann[kind][k];
+      }
+      if (!news[k] && fnews[k]) news[k] = fnews[k];
+    }
+  }
+  const paths = { v: new Array(T).fill(0) };
+  for (const [kind, arr] of Object.entries(ann)) paths[kind] = arr.map((v) => v / SCALE[kind]);
   return { paths, noise, news: news.map((n) => (n ? { kind: n.kind, sign: n.sign } : null)) };
 }
 
-const emptyPath = (T) => ({
-  x: new Array(T).fill(NaN), pi: new Array(T).fill(NaN), i: new Array(T).fill(NaN),
-  Ex: new Array(T).fill(NaN), Epi: new Array(T).fill(NaN), w: new Array(T).fill(NaN),
-});
+const emptyPath = (T, keys) => Object.fromEntries(keys.map((k) => [k, new Array(T).fill(NaN)]));
 
 function record(path, k, step) {
   for (const key of Object.keys(path)) path[key][k] = step[key];
@@ -113,15 +145,16 @@ export function createGame(config = {}, overrides = {}) {
   cfg.seed = normalizeSeed(cfg.seed);
   const params = withDefaults({ ...GAME_PARAMS, ...(config.params || {}) });
   const T = cfg.warmup + cfg.length;
-  const drawn = drawGame(cfg.seed, T, cfg.difficulty, cfg.warmup);
+  const model = gameModel(cfg.economy);
+  const drawn = drawGame(cfg.seed, T, cfg.difficulty, cfg.warmup, cfg.economy);
   const paths = overrides.paths || drawn.paths;
   const noise = overrides.noise || drawn.noise;
   const news = overrides.news || drawn.news;
-  const path = emptyPath(T);
+  const path = emptyPath(T, model.pathKeys);
   const rates = [];
-  let state = initialHybridState(params);
+  let state = model.init(params);
   for (let k = 0; k < cfg.warmup; k++) {
-    const step = stepHybrid(params, state, { rn: paths.rn[k], u: paths.u[k] }, null);
+    const step = model.step(params, state, shockAt(model, paths, k), null);
     record(path, k, step);
     rates.push(rateToLevel(step.i, params));
     state = step.state;
@@ -144,6 +177,8 @@ export function observe(game) {
       gap: game.path.x[k] + game.noise.gap[k],
       expectations: inflationLevel(game.path.Epi[k], p) + game.noise.expectations[k],
       rate: game.rates[k],
+      // The exchange rate is a market price, seen exactly (open economy only).
+      ...(game.config.economy === 'open' ? { fx: fxLevel(game.path.e[k], p) } : {}),
     });
   }
   return {
@@ -151,6 +186,7 @@ export function observe(game) {
     quarter: game.t - game.warmup + 1, // 1-based number of the quarter being decided
     length: game.config.length,
     warmup: game.warmup,
+    economy: game.config.economy,
     over: isOver(game),
     history,
     news: isOver(game) ? null : game.news[game.t],
@@ -173,7 +209,8 @@ export function submitRate(game, level) {
   const p = game.params;
   const k = game.t;
   const chosen = clampRate(level, p);
-  const step = stepHybrid(p, game.state, { rn: game.paths.rn[k], u: game.paths.u[k] }, Math.max(lowerBoundDev(p), rateToModel(chosen, p)));
+  const model = gameModel(game.config.economy);
+  const step = model.step(p, game.state, shockAt(model, game.paths, k), Math.max(lowerBoundDev(p), rateToModel(chosen, p)));
   const path = Object.fromEntries(Object.entries(game.path).map(([key, arr]) => [key, arr.slice()]));
   record(path, k, step);
   const inflDev = inflationLevel(step.pi, p) - p.targetAnn;

@@ -3,7 +3,7 @@
 Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Woodford, *Interest and Prices*; Hall & Woodford, Nobel 2026). Hlavní účel je, aby autor model do hloubky pochopil: jak spolu souvisí poptávka, inflace, sazby a očekávání. Vedlejší účel je hra „Buď ČNB“.
 
 - Repozitář: https://github.com/hlavacmarian/EkonomistProject (veřejný), větev `main`. Lokální kopie je v `C:\Users\Marian\Desktop\nk-lab`.
-- **Stav: fáze 1 (laboratoř šoků) a fáze 2 (živý diagram + hra Buď ČNB) jsou hotové.** Fáze 2 je na větvi `claude/funny-sagan-giyc11` (zatím nesloučená do `main`). Další na řadě je **fáze 3**.
+- **Stav: fáze 1 (laboratoř šoků), 2 (živý diagram + hra Buď ČNB) a 3 (malá otevřená ekonomika) jsou hotové.** Fáze 2 a 3 jsou na větvi `claude/funny-sagan-giyc11` (zatím nesloučené do `main`). Další na řadě je **fáze 4** (rozhodnutí uživatele k ní jsou níže).
 - Postup je dohodnutý ve 4 fázích. **Po každé fázi se zastav, shrň, co je hotové a jak jsi to ověřil, a počkej na pokyn.**
 - S uživatelem komunikuj česky. Kód a komentáře piš anglicky.
 - Commit nebo push dělej jen na požádání. Commity končí řádkem `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
@@ -12,7 +12,7 @@ Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Wo
 
 ```bash
 npm start   # statický server bez závislostí, http://localhost:5173/ (PORT=… mění port)
-npm test    # node --test, aktuálně 91 testů, všechny procházejí
+npm test    # node --test, aktuálně 145 testů, všechny procházejí
 ```
 
 - Čisté ES moduly, žádný build a **žádné závislosti**, Node ≥ 18. Tak to drž. Pokud bude nějaká knihovna opravdu nutná (např. WebGL ve fázi 4), načítej ji z CDN s přesnou verzí, ale nejdřív zvaž canvas 2D.
@@ -41,12 +41,17 @@ src/model/            jádro modelu (bez DOM)
   hybrid.js           stepHybrid(p, state, shock, rate|null) → {x, π, i, …, state'}; solveHybrid = smyčka přes něj;
                       initialHybridState, nextAnchoring(p, memory, w)
   check.js            residuals(sol, p): IS, NKPC, pravidlo/komplementarita, konzistence očekávání, mez
-  decompose.js        decompose / decomposeDisplay (příspěvky členů rovnic), causalFlows (šipky diagramu), TERMS
-  index.js            simulate(spec, mode) = veřejné API
+  open.js             malá otevřená ekonomika: solveOpenRational (PF, pásová eliminace, guess-and-verify přes mez
+                      i hranici kurzu), stepOpen / solveOpenHybrid, openDeterminacy (5×5), openResiduals, fxLevel
+  linalg.js           solveLinear (hustá), solveBanded (pásová), charPoly + polyRoots → eigenvalues
+  decompose.js        decompose / decomposeDisplay (příspěvky členů rovnic, i otevřená: bloky IS, NKPC=CPI, UIP, TR),
+                      causalFlows (šipky diagramu), TERMS / OPEN_TERMS, FLOW_TARGET / OPEN_FLOW_TARGET
+  index.js            simulate(spec, mode) = veřejné API; spec.economy = 'closed' | 'open'; toOpenLevels
 src/game/             hra bez DOM: rng.js (mulberry32, gaussian), game.js (createGame, observe, submitRate,
-                      isOver, drawGame, FIRE), evaluate.js (lossBreakdown, autopilotSolution, dataRuleSolution,
-                      analyze, evaluateGame, RULES, LOSS_WEIGHTS), index.js
-src/scenarios.js      SCENARIOS (custom, oil, pandemic, zlb, deanchor), buildRuns(built, mode)
+                      isOver, drawGame, FIRE, FOREIGN_PROCESS), evaluate.js (lossBreakdown, autopilotSolution,
+                      dataRuleSolution, analyze, evaluateGame, RULES, LOSS_WEIGHTS), economy.js (gameModel: krok /
+                      start / cesta pro uzavřenou i otevřenou ekonomiku), index.js
+src/scenarios.js      SCENARIOS (custom, oil, pandemic, zlb, deanchor, koruna), buildRuns(built, mode)
 src/ui/app.js         záložky (#lab / #game), stav, ovládání, časová osa, živý panel, připínání, vysvětlení
 src/ui/chart.js       SVG čárový graf: createChart(el,{title,unit,onHover}) → update/setCursor/setTitle;
                       data umí points (body), hbands (pásmo), bands [a,b,třída], xLabel/tickFrom
@@ -58,7 +63,7 @@ src/ui/game.js        obrazovky hry: nastavení, tah, vyhodnocení (grafy, rozbo
 src/ui/i18n.js        loadLocale, t(key, vars), fmt(v, digits) (desetinná čárka v cs), eqRefs, applyStatic
 src/ui/styles.css     barvy jako CSS proměnné (světlý i tmavý motiv), --s1 racionální/hráč, --s2 hybridní,
                       --up/--down šipky, --c-* členy rozkladu
-test/                 model.test.js, decompose.test.js, game.test.js, i18n.test.js
+test/                 model.test.js, decompose.test.js, open.test.js, game.test.js, i18n.test.js
 ```
 
 ### Model a konvence jednotek
@@ -82,9 +87,13 @@ test/                 model.test.js, decompose.test.js, game.test.js, i18n.test.
 - **Výběr metody:** racionální režim použije MUC, jen když jsou všechny šoky AR(1) od t = 0, nic není vynucené a mez neváže. Jinak použije PF: soustava 3T×3T, T = max(60, horizont + 40), terminální podmínka x_T = π_T = 0, Gaussova eliminace.
 - **Determinace:** obě vlastní čísla A mimo jednotkový kruh. Pro m = 1 to odpovídá podmínce κ(φπ − 1) + (1 − β)φx > 0, což test ověřuje. Při neurčitosti UI nekreslí **žádnou** racionální cestu (ani srovnávací) a zobrazí vysvětlení.
 - **Endogenní ukotvení:** s_t = (1−λ)s_{t−1} + λ|4π_t|, w\*_t = w̄·exp(−max(0, s_t − pásmo)/pásmo), w_{t+1} = w_t + g(w\*_t − w_t). Výchozí w̄ = 0,6 (ve scénáři 4 je 0,8), pásmo 1 p. b., λ = 0,3, g = `anchorSpeed` = 1 (laboratoř beze změny proti fázi 1), start `anchorInit` = null (= w̄). Hra: w̄ = 0,9, start 0,6, g = 0,3.
+- **Otevřená ekonomika** (`open.js`, rovnice v README): x = c + δq + γy*, Eulerova rovnice pro c s reálnou sazbou i − Eπᴴ, NKPC pro domácí inflaci πᴴ, CPI = (1−α)πᴴ + απᶠ s postupným přenosem kurzu (ψ, mezera d), reálná UIP q = Eq − (i − Eπᴴ − i*) + χ + ξ, nominální kurz e = q + pᴴ, pravidlo na (1−ω)π + ωπᴴ. Kalibrace α 0,35, δ 0,1, γ 0,5, ψ 0,2, θ 0,8 (hybridní E q' = θq), ω 0, výchozí kurz 25,7 CZK/EUR (jen zobrazení). Šoky istar, ystar (v %, nedělí se 4), chi. Kurzový závazek `policy.fxFloor = {level (% nad ustáleným stavem), from, to}`, intervence ξ ≥ 0 jen na hranici. Racionální = vždy PF, T = max(130, h + 90). Determinace: 3 nestabilní kořeny z 5, jeden kořen je strukturálně přesně 1 (trvalé oslabení vyrovnané nižší c), počítá se k nestabilním. Bez obchodu = přesně uzavřený model (test).
+- **Proč ψ = 0,2 (ne 0,5):** s rychlým přenosem se pravidlo reagující se zpožděním na CPI rozkmitá (zisk smyčky sazba → kurz → CPI → sazba > 1). Ve hře pak pravidlo na datech končilo odvoláním v 90 % her.
 - **Scénáře:** `build(params, settings)` vrací `{main, alt?}`. Alternativní běh se kreslí čárkovaně. Výběr scénáře vrátí parametry na výchozí hodnoty, připnuté běhy zůstanou.
   - Scénář 3: schod −5 p. b. na 6 čtvrtletí, výchozí N = 1.
   - Scénář 4: u = 2,5 p. b., ρ = 0,85, zpoždění 4 čtvrtletí, hybridní režim.
+  - Scénář 5 (koruna, `fixedEconomy: 'open'`): rn −2 + y* −1,5 + i* −1, schody na 10 čtvrtletí, ω = 1, hranice 27 CZK/EUR od Q1 po dobu 12 čtvrtletí, racionální režim. Sazba se nevynucuje: držení na nule by v racionálním režimu spustilo hádanku forward guidance (CPI ~200 %). S ω = 0 pravidlo závazek samo podkope, to je v textu jako pokus.
+  - Přepínač ekonomiky (`settings.economy`) přežije změnu scénáře, pokud scénář nevyžaduje jinou.
 
 ## Fáze 2: co je hotové a jak (pro navazování)
 
@@ -110,10 +119,20 @@ Hra Buď ČNB:
 - Během hry žádné průběžné skóre.
 - Vyhodnocení po hře: ztrátová funkce (odchylka inflace od cíle na druhou + vážená mezera na druhou + penalizace za skoky sazby), srovnání s autopilotem podle Taylorova pravidla při stejné sekvenci šoků, grafy přes sebe a slovní rozbor největších chyb (pozdní reakce, přehnaná reakce, reakce na šum, uvolnění při nabídkovém šoku). Rozbor generuj pravidly, ne přes LLM.
 
-### Poznámky k fázi 3
+## Fáze 3: co je hotové a jak (pro navazování)
 
-- Diagram má rozložení počítané v `layout(W)` v `diagram.js`; kurz koruny bude další uzel a nové šipky. `causalFlows` a `FLOW_TARGET` rozšiř o kanály otevřené ekonomiky a drž test „šipky do uzlu = hodnota uzlu“.
-- Hra volá jen `stepHybrid`/`solveHybrid` a `rateToModel`; pro otevřený režim bude potřeba otevřená varianta kroku se stejným rozhraním.
+- Laboratoř: přepínač Uzavřená/Otevřená, sekce „Otevřená ekonomika“ (α, δ, γ, ψ, θ, ω, kurz), šoky i*/y*/χ, grafy kurzu (stínování = koruna na hranici) a domácí vs. dovozní inflace, zahraniční sazba v grafu sazby, rovnice CPI a UIP (odkazy `[[CPI]]`, `[[UIP]]`), scénář 5.
+- Diagram: `layout(W, open)`, uzel kurzu vpravo nahoře, čistý vývoz jako vedená šipka (`type: 'route'`) přes horní okraj, v úzkém otevřeném rozložení mají vstupy jen názvy. Živý panel má v otevřeném režimu 4 sloupcové grafy (IS, CPI, UIP, TR).
+- Hra: `config.economy`. Zahraniční šoky jdou ze samostatného proudu RNG (`seed ^ 0x5bd1e995`), takže domácí šoky i uzavřené hry jsou bitově stejné jako ve fázi 2 (ověřeno). Kurz hráč vidí přesně a hned. Pravidla rozboru jsou stejná.
+- Ověřeno: `npm test` (145), Playwright 1400 i 375 px bez vodorovného posuvníku, CZ i EN, světlý i tmavý motiv, konzole bez chyb, scénář 5, celá hra v otevřené ekonomice.
+
+## Fáze 4: rozhodnutí uživatele (listopad 2026)
+
+Uživatel chce, aby byla ekonomika **i graficky vidět**: tečky = subjekty (fyzické i právnické osoby), šipky mezi nimi = platby a tloušťka šipky = velikost transakce, aby bylo vidět, jak ekonomika funguje. Ke 3 otázkám odpověděl:
+- **Pořadí:** nejdřív fáze 3 (hotovo), tečky a platby až ve fázi 4.
+- **Mechanika:** **skuteční agenti**, kteří se sami rozhodují (domácnosti utrácejí podle příjmu a sazby, firmy mění ceny jen občas). Poptávka a inflace vzniknou zdola a s tříčlenným modelem se shodují jen kvalitativně. Nechce jen obrázek tříčlenného modelu.
+- **Subjekty** (vedle domácností, firem a centrální banky): **komerční banka** (vklady, úvěry, úroky jako šipky), **stát** (daně, dávky), **zahraničí** (dovoz, vývoz, napojení na otevřenou ekonomiku) a **firmy mezi sebou** (dodavatelská síť).
+- Platby jako šipky s tloušťkou podle částky jsou rozšíření původního zadání fáze 4 (to mělo jen barvy domácností a záblesky firem). Drž obojí.
 
 ## Fáze 3 a 4 (pro orientaci, doslova)
 

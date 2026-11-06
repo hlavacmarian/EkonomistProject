@@ -1,10 +1,14 @@
 // Predefined scenarios of the shock lab. Pure data + spec builders, no DOM.
+
+import { fxDeviation } from './model/open.js';
 //
 // A scenario has
 //   defaults        UI settings it starts from (shock, horizon, policy extras, mode)
 //   params          parameter overrides applied when the scenario is selected
 //   fixedKind       the shock kind cannot be changed in this scenario
-//   extras          which scenario-specific controls are shown ('delay', 'fg')
+//   fixedEconomy    the scenario needs this economy ('open'); otherwise the
+//                   closed/open switch is kept when the scenario is selected
+//   extras          which scenario-specific controls are shown ('delay', 'fg', 'floor', 'commitment')
 //   build(p, s)     -> { main, alt? }: model specs for the main run and an optional
 //                      comparison run drawn dashed in the same charts
 
@@ -22,6 +26,20 @@ const baseSpec = (p, s) => ({
   horizon: s.horizon,
   policy: { delay: s.delay || 0 },
   forwardGuidance: s.shape === 'step' ? s.fg || 0 : 0,
+  economy: s.economy || 'closed',
+});
+
+// Scenario 5: the euro-area recession and low ECB rates of 2012-2013 on top of a
+// domestic slump, with and without a commitment to keep the koruna weaker than a floor.
+const KORUNA_FOREIGN = { ystar: -1.5, istar: -1 };
+const korunaSpec = (p, s) => ({
+  ...baseSpec(p, { ...s, economy: 'open' }),
+  shocks: [
+    shockOf(s),
+    { kind: 'ystar', size: KORUNA_FOREIGN.ystar, shape: 'step', duration: s.duration },
+    { kind: 'istar', size: KORUNA_FOREIGN.istar, shape: 'step', duration: s.duration },
+  ],
+  forwardGuidance: 0,
 });
 
 export const SCENARIOS = [
@@ -76,6 +94,28 @@ export const SCENARIOS = [
       main: { spec: baseSpec(p, s), label: 'run.delayed' },
       alt: { spec: { ...baseSpec(p, s), policy: { delay: 0 } }, label: 'run.timely' },
     }),
+  },
+  {
+    id: 'koruna',
+    defaults: {
+      mode: 'rational', kind: 'rn', size: -2, rho: 0.8, shape: 'step', duration: 10, horizon: 32,
+      delay: 0, fg: 0, economy: 'open', floor: 27, commitment: 12,
+    },
+    params: { ruleDomestic: 1 },
+    fixedKind: true,
+    fixedShape: true,
+    fixedEconomy: 'open',
+    extras: ['floor', 'commitment'],
+    build: (p, s) => {
+      const spec = korunaSpec(p, s);
+      return {
+        main: {
+          spec: { ...spec, policy: { ...spec.policy, fxFloor: { level: fxDeviation(s.floor, p), from: 1, to: 1 + s.commitment } } },
+          label: 'run.withFloor',
+        },
+        alt: { spec, label: 'run.noFloor' },
+      };
+    },
   },
 ];
 

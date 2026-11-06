@@ -1,8 +1,11 @@
 // Shock specifications and their deterministic paths.
 //
-// A shock spec is { kind: 'rn' | 'u' | 'v', size, rho, shape, duration, start }:
-//   kind     rn = natural real rate (demand), u = cost-push, v = monetary policy
-//   size     impact in p.p. annualized (converted to quarterly model units here)
+// A shock spec is { kind, size, rho, shape, duration, start }:
+//   kind     rn = natural real rate (demand), u = cost-push, v = monetary policy;
+//            open economy only: istar = foreign interest rate, ystar = foreign
+//            output gap (foreign demand), chi = exchange-rate risk premium
+//   size     impact: rates and the premium in p.p. annualized (divided by 4 into
+//            quarterly model units), the foreign output gap in % (not divided)
 //   shape    'ar1'  -> z_t = size * rho^(t - start)
 //            'step' -> z_t = size for start <= t < start + duration, 0 afterwards
 //   start    quarter in which the shock hits (default 0)
@@ -11,12 +14,17 @@
 // { rn: [...], u: [...], v: [...] } in model units (used by the game, whose shocks
 // are random draws). Missing entries count as zero.
 
-export const SHOCK_KINDS = ['rn', 'u', 'v'];
+export const SHOCK_KINDS = ['rn', 'u', 'v', 'istar', 'ystar', 'chi'];
+export const CLOSED_KINDS = ['rn', 'u', 'v'];
+export const OPEN_KINDS = ['istar', 'ystar', 'chi'];
+// Divisor from the size typed in the UI to model units.
+export const SHOCK_SCALE = Object.freeze({ rn: 4, u: 4, v: 4, istar: 4, ystar: 1, chi: 4 });
 
 export const isPathSet = (shocks) => Boolean(shocks) && !Array.isArray(shocks);
 
 export function shockPaths(shocks, T) {
-  const paths = { rn: new Float64Array(T), u: new Float64Array(T), v: new Float64Array(T) };
+  const paths = {};
+  for (const k of SHOCK_KINDS) paths[k] = new Float64Array(T);
   if (isPathSet(shocks)) {
     for (const k of SHOCK_KINDS) {
       const src = shocks[k] || [];
@@ -26,7 +34,7 @@ export function shockPaths(shocks, T) {
   }
   for (const s of shocks || []) {
     const start = s.start || 0;
-    const q = s.size / 4;
+    const q = s.size / (SHOCK_SCALE[s.kind] || 4);
     for (let t = start; t < T; t++) {
       if (s.shape === 'step') {
         if (t < start + (s.duration || 1)) paths[s.kind][t] += q;

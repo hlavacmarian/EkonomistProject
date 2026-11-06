@@ -2,8 +2,9 @@
 // rule-based review of the biggest mistakes (no language model involved: every
 // finding comes from explicit thresholds below).
 
-import { solveHybrid, stepHybrid, initialHybridState } from '../model/hybrid.js';
 import { steadyNominalAnn } from '../model/params.js';
+import { fxLevel } from '../model/open.js';
+import { gameModel, shockAt } from './economy.js';
 import { rateToLevel, rateToModel, inflationLevel, clampRate, playerRates, isOver } from './game.js';
 
 // Loss per quarter: (pi - pi*)^2 + gap * x^2 + rate * (i_t - i_{t-1})^2,
@@ -48,6 +49,14 @@ export function levelsOf(sol, p) {
     natural: Array.from({ length: n }, (_, k) => 4 * sol.rn[k] + p.neutralRealAnn),
     cost: Array.from({ length: n }, (_, k) => 4 * sol.u[k]),
     w: Array.from(sol.w),
+    ...(sol.economy === 'open' ? {
+      fx: Array.from({ length: n }, (_, k) => fxLevel(sol.e[k], p)),
+      domestic: Array.from({ length: n }, (_, k) => inflationLevel(sol.piH[k], p)),
+      imported: Array.from({ length: n }, (_, k) => inflationLevel(sol.piF[k], p)),
+      foreignRate: Array.from({ length: n }, (_, k) => 4 * sol.istar[k] + steadyNominalAnn(p)),
+      foreignDemand: Array.from(sol.ystar),
+      premium: Array.from({ length: n }, (_, k) => 4 * sol.chi[k]),
+    } : {}),
   };
 }
 
@@ -70,13 +79,13 @@ export function lossBreakdown(levels, p, from = 0, weights = LOSS_WEIGHTS) {
 
 // Player's run: the rates actually set, history under the Taylor rule.
 export function playerSolution(game) {
-  return solveHybrid(game.params, game.paths, { rates: playerRates(game) }, game.t);
+  return gameModel(game.config.economy).solve(game.params, game.paths, { rates: playerRates(game) }, game.t);
 }
 
 // Autopilot: the Taylor rule of the model (true, current data) on the same shocks,
 // over the quarters actually played (fewer if the player was replaced early).
 export function autopilotSolution(game) {
-  return solveHybrid(game.params, game.paths, {}, game.t);
+  return gameModel(game.config.economy).solve(game.params, game.paths, {}, game.t);
 }
 
 // The same rule, but applied to what the player could see: last quarter's noisy
@@ -84,7 +93,8 @@ export function autopilotSolution(game) {
 // alone costs.
 export function dataRuleSolution(game) {
   const p = game.params;
-  let state = initialHybridState(p);
+  const model = gameModel(game.config.economy);
+  let state = model.init(p);
   let prev = null;
   const rates = [];
   for (let k = 0; k < game.t; k++) {
@@ -95,10 +105,10 @@ export function dataRuleSolution(game) {
       rate = rateToModel(clampRate(dataRule(p, inflation, gap), p), p);
     }
     rates.push(rate ?? NaN);
-    prev = stepHybrid(p, state, { rn: game.paths.rn[k], u: game.paths.u[k] }, rate);
+    prev = model.step(p, state, shockAt(model, game.paths, k), rate);
     state = prev.state;
   }
-  return solveHybrid(p, game.paths, { rates }, game.t);
+  return model.solve(p, game.paths, { rates }, game.t);
 }
 
 // ---------------------------------------------------------------------------

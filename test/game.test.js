@@ -5,7 +5,7 @@ import {
   autopilotSolution, dataRuleSolution, lossBreakdown, levelsOf, dataRule, rateToModel, clampRate,
   mulberry32, gaussian, normalizeSeed, GAME_DEFAULTS, DIFFICULTY, NOISE, LOSS_WEIGHTS, FIRE,
 } from '../src/game/index.js';
-import { solveHybrid, residuals } from '../src/model/index.js';
+import { solveHybrid, solveOpenHybrid, residuals, openResiduals } from '../src/model/index.js';
 
 const TOL = 1e-9;
 const W = GAME_DEFAULTS.warmup;
@@ -263,5 +263,76 @@ describe('game: rule-based review', () => {
     const ev = evaluateGame(g);
     for (let k = 1; k < ev.findings.length; k++) assert.ok(ev.findings[k - 1].severity >= ev.findings[k].severity);
     assert.deepEqual(analyze(g, ev.runs.player, ev.runs.autopilot), ev.findings);
+  });
+});
+
+describe('game in the open economy', () => {
+  const dataPlayer = (o, game) => {
+    const last = o.history.at(-1);
+    return dataRule(game.params, last.inflation, last.gap);
+  };
+
+  test('same seed -> same game; the domestic shocks are those of the closed game', () => {
+    const a = createGame({ seed: 77, economy: 'open' });
+    const b = createGame({ seed: 77, economy: 'open' });
+    assert.deepEqual(a.paths, b.paths);
+    assert.deepEqual(a.news, b.news);
+    const closed = createGame({ seed: 77 });
+    assert.deepEqual(a.paths.rn, closed.paths.rn);
+    assert.deepEqual(a.paths.u, closed.paths.u);
+    assert.deepEqual(a.noise, closed.noise);
+    assert.ok(a.paths.chi.some((v) => v !== 0) && a.paths.ystar.some((v) => v !== 0));
+    assert.equal(closed.paths.chi, undefined, 'the closed game has no foreign shocks');
+  });
+
+  test('the koruna is seen exactly, the rest with noise and a lag', () => {
+    const g = submitRate(createGame({ seed: 5, economy: 'open' }), 3);
+    const o = observe(g);
+    const sol = playerSolution(g);
+    const truth = levelsOf(sol, g.params);
+    for (const h of o.history) assert.ok(Math.abs(h.fx - truth.fx[h.k]) < 1e-12);
+    assert.equal(o.history.length, g.t);
+    assert.equal(o.economy, 'open');
+  });
+
+  test('play = solveOpenHybrid with the same rates; autopilot = solveOpenHybrid with the rule', () => {
+    const g = play(createGame({ seed: 41, economy: 'open' }), (o) => o.lastRate + (o.quarter % 3 === 0 ? 0.5 : -0.25));
+    const sol = playerSolution(g);
+    for (const k of ['x', 'pi', 'i', 'w', 'q', 'e']) {
+      for (let t = 0; t < g.t; t++) assert.ok(Math.abs(sol[k][t] - g.path[k][t]) < TOL, `${k} ${t}`);
+    }
+    assert.ok(openResiduals(sol, g.params).max < TOL);
+    const auto = autopilotSolution(g);
+    const ref = solveOpenHybrid(g.params, g.paths, {}, g.t);
+    assert.deepEqual(Array.from(auto.q), Array.from(ref.q));
+    assert.ok(openResiduals(auto, g.params).max < TOL);
+  });
+
+  test('a player who applies the rule to the observed data reproduces the data-rule benchmark', () => {
+    for (const seed of [3, 9, 1998]) {
+      const ev = evaluateGame(play(createGame({ seed, economy: 'open' }), dataPlayer));
+      assert.ok(Math.abs(ev.loss.player.total - ev.loss.dataRule.total) < TOL);
+      assert.ok(ev.levels.player.fx.every(Number.isFinite));
+    }
+  });
+
+  test('the lagged rule on noisy data stays stable in the open economy (calibration)', () => {
+    let fired = 0;
+    for (let seed = 1; seed <= 40; seed++) if (play(createGame({ seed, economy: 'open' }), dataPlayer).fired) fired++;
+    assert.equal(fired, 0);
+  });
+
+  test('raising the rate strengthens the koruna in the same quarter', () => {
+    const g0 = scripted({ length: 6 });
+    const p = g0.params;
+    const z = (T) => new Array(T).fill(0);
+    const T = g0.T;
+    const og = createGame({ length: 6, economy: 'open' }, {
+      paths: { rn: z(T), u: z(T), v: z(T), istar: z(T), ystar: z(T), chi: z(T) },
+      noise: g0.noise, news: g0.news,
+    });
+    const after = submitRate(og, observe(og).neutral + 2);
+    assert.ok(after.path.q[W] < 0 && after.path.e[W] < 0);
+    assert.ok(observe(after).history.at(-1).fx < p.eurCzk);
   });
 });

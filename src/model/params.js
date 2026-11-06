@@ -22,6 +22,14 @@ export const DEFAULT_PARAMS = Object.freeze({
   anchorMemory: 0.3, // weight of the latest miss in the running memory of misses
   anchorSpeed: 1, // speed at which w moves towards the credibility earned (1 = immediately)
   anchorInit: null, // starting w (null = anchoring); the game starts below the ceiling
+  // Small open economy (used only when the economy is 'open'):
+  alpha: 0.35, // share of imported goods in the CPI basket
+  delta: 0.1, // net exports: output gap response to a 1% real depreciation
+  gamma: 0.5, // net exports: output gap response to a 1% foreign output gap
+  passThrough: 0.2, // share of the gap between import prices and the exchange rate closed each quarter
+  fxExpect: 0.8, // hybrid regime: E_t q_{t+1} = fxExpect * q_t (regressive exchange-rate expectations)
+  ruleDomestic: 0, // weight of domestic (instead of CPI) inflation in the Taylor rule: 0 = CPI, 1 = domestic
+  eurCzk: 25.7, // display only: CZK per EUR in the steady state
 });
 
 // Slider metadata for every numeric parameter (ranges are deliberately wide
@@ -40,6 +48,13 @@ export const PARAM_META = Object.freeze({
   anchoring: { min: 0, max: 1, step: 0.05 },
   anchorBand: { min: 0.25, max: 4, step: 0.25 },
   anchorMemory: { min: 0.05, max: 1, step: 0.05 },
+  alpha: { min: 0, max: 0.7, step: 0.05 },
+  delta: { min: 0, max: 0.5, step: 0.01 },
+  gamma: { min: 0, max: 1, step: 0.05 },
+  passThrough: { min: 0.1, max: 1, step: 0.05 },
+  fxExpect: { min: 0, max: 0.95, step: 0.05 },
+  ruleDomestic: { min: 0, max: 1, step: 0.25 },
+  eurCzk: { min: 20, max: 30, step: 0.1 },
 });
 
 export function withDefaults(params = {}) {

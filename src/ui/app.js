@@ -2,7 +2,8 @@
 // controls, charts and explanatory text together.
 
 import {
-  DEFAULT_PARAMS, PARAM_META, simulate, determinacy, taylorPrincipleValue,
+  DEFAULT_PARAMS, PARAM_META, simulate, determinacy, openDeterminacy, taylorPrincipleValue,
+  CLOSED_KINDS, OPEN_KINDS,
 } from '../model/index.js';
 import { SCENARIOS, scenarioById, buildRuns } from '../scenarios.js';
 import { createChart } from './chart.js';
@@ -23,12 +24,15 @@ const SHOCK_META = {
   horizon: { min: 20, max: 40, step: 1 },
   delay: { min: 0, max: 8, step: 1 },
   fg: { min: 0, max: 8, step: 1 },
+  floor: { min: 25, max: 30, step: 0.1 },
+  commitment: { min: 2, max: 20, step: 1 },
 };
+const OPEN_PARAMS = ['alpha', 'delta', 'gamma', 'passThrough', 'fxExpect', 'ruleDomestic', 'eurCzk'];
 
 const state = {
   scenarioId: 'custom',
   params: { ...DEFAULT_PARAMS },
-  settings: { ...SCENARIOS[0].defaults },
+  settings: { ...SCENARIOS[0].defaults, economy: 'closed' },
   pins: [],
   pinCounter: 0,
   quarter: 0, // timeline position, shared by the charts and the live diagram
@@ -73,15 +77,23 @@ function boundQuarters(res) {
   return res.atBound.map((b, q) => (b ? q : -1)).filter((q) => q >= 0);
 }
 
+const isOpen = () => state.settings.economy === 'open';
+
 function runLabel(run) {
   const s = state.settings;
-  const base = t(`runs.${run.label.replace('run.', '')}`, { n: run.label === 'run.delayed' ? s.delay : s.fg });
+  const n = run.label === 'run.delayed' ? s.delay : run.label === 'run.withFloor' ? fmt(s.floor, 1) : s.fg;
+  const base = t(`runs.${run.label.replace('run.', '')}`, { n });
   return `${base} · ${t(`runs.mode_${run.mode}`)}`;
 }
 
 function paramSummary(params, settings, scenario) {
   const parts = [];
-  const sym = { beta: 'β', sigma: 'σ', kappa: 'κ', phiPi: 'φπ', phiX: 'φx', targetAnn: 'π*', neutralRealAnn: 'r*', lowerBoundAnn: 'LB', expDiscount: 'm', anchoring: 'w', anchorBand: 'band', anchorMemory: 'λ' };
+  const sym = {
+    beta: 'β', sigma: 'σ', kappa: 'κ', phiPi: 'φπ', phiX: 'φx', targetAnn: 'π*', neutralRealAnn: 'r*', lowerBoundAnn: 'LB',
+    expDiscount: 'm', anchoring: 'w', anchorBand: 'band', anchorMemory: 'λ',
+    alpha: 'α', delta: 'δ', gamma: 'γ', passThrough: 'ψ', fxExpect: 'θ', ruleDomestic: 'ω', eurCzk: 'CZK/EUR',
+  };
+  if (settings.economy === 'open' && scenario.fixedEconomy !== 'open') parts.push(t('economy.openShort'));
   const ref = { ...DEFAULT_PARAMS, ...scenario.params };
   for (const k of Object.keys(sym)) {
     if (params[k] !== ref[k]) parts.push(`${sym[k]} ${fmt(params[k], decimals(PARAM_META[k].step))}`);
@@ -95,6 +107,8 @@ function paramSummary(params, settings, scenario) {
   if (settings.shape === 'step' && settings.duration !== d.duration) parts.push(`${settings.duration} ${t('shock.durationUnit')}`);
   if (settings.delay !== d.delay) parts.push(`${t('extras.delay').toLowerCase()} ${settings.delay}`);
   if (settings.shape === 'step' && settings.fg !== d.fg) parts.push(`N ${settings.fg}`);
+  if (settings.floor !== undefined && settings.floor !== d.floor) parts.push(`${fmt(settings.floor, 1)} CZK/EUR`);
+  if (settings.commitment !== undefined && settings.commitment !== d.commitment) parts.push(`${settings.commitment} ${t('shock.durationUnit')}`);
   return parts.join(', ');
 }
 
@@ -153,7 +167,10 @@ function renderControls() {
     `<option value="${x.id}" ${x.id === sc.id ? 'selected' : ''}>${t(`scenarios.${x.id}.title`)}</option>`).join('');
   const modeButtons = ['rational', 'hybrid', 'both'].map((m) =>
     `<button type="button" data-mode="${m}" aria-pressed="${s.mode === m}">${t(`modes.${m}`)}</button>`).join('');
-  const kindOptions = ['rn', 'u', 'v'].map((k) =>
+  const economyButtons = ['closed', 'open'].map((e) =>
+    `<button type="button" data-economy="${e}" aria-pressed="${s.economy === e}" ${sc.fixedEconomy && sc.fixedEconomy !== e ? 'disabled' : ''}>${t(`economy.${e}`)}</button>`).join('');
+  const kinds = s.economy === 'open' ? [...CLOSED_KINDS, ...OPEN_KINDS] : CLOSED_KINDS;
+  const kindOptions = kinds.map((k) =>
     `<option value="${k}" ${k === s.kind ? 'selected' : ''}>${t(`shock.kinds.${k}`)}</option>`).join('');
   const shapeOptions = ['ar1', 'step'].map((k) =>
     `<option value="${k}" ${k === s.shape ? 'selected' : ''}>${t(`shock.shapes.${k}`)}</option>`).join('');
@@ -166,6 +183,8 @@ function renderControls() {
     extras.push(settingRow('fg', t('extras.fg'), t('extras.fgUnit'), t('extras.fgTip')) +
       `<p class="ctl-note" data-row="fg-note">${t('extras.fgNeedsStep')}</p>`);
   }
+  if (sc.extras.includes('floor')) extras.push(settingRow('floor', t('extras.floor'), 'CZK/EUR', t('extras.floorTip')));
+  if (sc.extras.includes('commitment')) extras.push(settingRow('commitment', t('extras.commitment'), t('extras.delayUnit'), t('extras.commitmentTip')));
 
   $('#controls').innerHTML = `
     <details open>
@@ -179,6 +198,11 @@ function renderControls() {
         <div class="seg" role="group" aria-label="${t('sections.expectations')}">${modeButtons}</div>
         ${tipBox('mode', t('modes.tip'))}
       </div>
+      <div class="ctl">
+        <div class="ctl-head"><label>${t('economy.label')}</label>${infoButton('economy')}</div>
+        <div class="seg" role="group" aria-label="${t('economy.label')}">${economyButtons}</div>
+        ${tipBox('economy', t('economy.tip'))}
+      </div>
     </details>
 
     <details ${openAttr(true)}>
@@ -187,7 +211,7 @@ function renderControls() {
         <div class="ctl-head"><label for="kind">${t('shock.kind')}</label></div>
         <select id="kind" ${sc.fixedKind ? 'disabled' : ''}>${kindOptions}</select>
       </div>
-      ${settingRow('size', t('shock.size'), t('shock.sizeUnit'), t(`shock.sizeTip.${s.kind}`))}
+      ${settingRow('size', t('shock.size'), s.kind === 'ystar' ? '%' : t('shock.sizeUnit'), t(`shock.sizeTip.${s.kind}`))}
       <div class="ctl ${sc.fixedShape ? 'disabled' : ''}">
         <div class="ctl-head"><label for="shape">${t('shock.shape')}</label>${infoButton('shape')}</div>
         <select id="shape" ${sc.fixedShape ? 'disabled' : ''}>${shapeOptions}</select>
@@ -215,6 +239,11 @@ function renderControls() {
       ${paramRow('neutralRealAnn')}
       ${paramRow('lowerBoundAnn')}
     </details>
+
+    ${s.economy === 'open' ? `<details ${openAttr(false)}>
+      <summary>${t('sections.open')}</summary>
+      ${OPEN_PARAMS.map((k) => paramRow(k, k === 'ruleDomestic' ? `<br><button type="button" class="btn small" data-set="ruleDomestic" data-value="${state.params.ruleDomestic >= 0.5 ? 0 : 1}">${t(state.params.ruleDomestic >= 0.5 ? 'buttons.tryCpiRule' : 'buttons.tryDomesticRule')}</button>` : '')).join('')}
+    </details>` : ''}
 
     <details ${advancedOpen && !mobile ? 'open' : ''}>
       <summary>${t('sections.advanced')}</summary>
@@ -260,6 +289,7 @@ function syncControlVisibility() {
     if (!state.params.endogenousAnchoring) document.querySelector(`[data-row="${k}"]`)?.classList.add('disabled');
   }
   document.querySelector('[data-row="expDiscount"]')?.classList.toggle('disabled', s.mode === 'hybrid');
+  document.querySelector('[data-row="fxExpect"]')?.classList.toggle('disabled', s.mode === 'rational');
 }
 
 function setOutput(id, value, meta, unit) {
@@ -280,7 +310,10 @@ function bindControls() {
         setOutput(key, v, PARAM_META[key], unit === `params.${key}.unit` ? '' : unit);
       } else {
         state.settings[key] = v;
-        const units = { size: t('shock.sizeUnit'), duration: t('shock.durationUnit'), horizon: t('shock.horizonUnit'), delay: t('extras.delayUnit'), fg: t('extras.fgUnit') };
+        const units = {
+          size: state.settings.kind === 'ystar' ? '%' : t('shock.sizeUnit'), duration: t('shock.durationUnit'), horizon: t('shock.horizonUnit'),
+          delay: t('extras.delayUnit'), fg: t('extras.fgUnit'), floor: 'CZK/EUR', commitment: t('extras.delayUnit'),
+        };
         setOutput(`s-${key}`, v, SHOCK_META[key], units[key] || '');
       }
       refresh();
@@ -311,6 +344,12 @@ function bindControls() {
       for (const b of root.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b === btn));
       syncControlVisibility();
       refresh();
+    } else if (btn.dataset.economy) {
+      state.settings.economy = btn.dataset.economy;
+      if (state.settings.economy === 'closed' && OPEN_KINDS.includes(state.settings.kind)) state.settings.kind = 'rn';
+      state.liveRun = null;
+      renderControls();
+      refresh();
     } else if (btn.dataset.tip) {
       const id = btn.dataset.tip;
       const box = document.getElementById(`tip-${id}`);
@@ -320,6 +359,7 @@ function bindControls() {
       if (open) state.openTips.add(id); else state.openTips.delete(id);
     } else if (btn.dataset.set) {
       setParam(btn.dataset.set, Number(btn.dataset.value));
+      if (btn.dataset.set === 'ruleDomestic') renderControls();
     } else if (btn.id === 'reset') {
       selectScenario(state.scenarioId);
     }
@@ -339,7 +379,8 @@ function selectScenario(id) {
   const sc = scenarioById(id);
   state.scenarioId = sc.id;
   state.params = { ...DEFAULT_PARAMS, ...sc.params };
-  state.settings = { ...sc.defaults };
+  // The closed/open switch survives a change of scenario unless the scenario needs one.
+  state.settings = { ...sc.defaults, economy: sc.fixedEconomy || state.settings.economy || 'closed' };
   renderControls();
   refresh();
 }
@@ -347,9 +388,16 @@ function selectScenario(id) {
 // ---------------------------------------------------------------------------
 // Equations
 
-function equationsHtml(mode = state.settings.mode, m = state.params.expDiscount) {
+function equationsHtml(mode = state.settings.mode, m = state.params.expDiscount, economy = state.settings.economy) {
   const mTxt = m !== 1 && mode !== 'hybrid' ? `<b>m</b>·` : '';
-  const eqs = [
+  const eqs = economy === 'open' ? [
+    ['IS', `x<sub>t</sub> = c<sub>t</sub> + δ q<sub>t</sub> + γ y*<sub>t</sub> ,&nbsp;&nbsp; c<sub>t</sub> = ${mTxt}E<sub>t</sub>c<sub>t+1</sub> − σ (i<sub>t</sub> − E<sub>t</sub>π<sup>H</sup><sub>t+1</sub> − r<sup>n</sup><sub>t</sub>)`],
+    ['NKPC', `π<sup>H</sup><sub>t</sub> = β${mTxt ? '·' + mTxt : ''}E<sub>t</sub>π<sup>H</sup><sub>t+1</sub> + κ x<sub>t</sub> + u<sub>t</sub>`],
+    ['CPI', `π<sub>t</sub> = (1 − α) π<sup>H</sup><sub>t</sub> + α π<sup>F</sup><sub>t</sub> ,&nbsp;&nbsp; π<sup>F</sup><sub>t</sub> = ψ (d<sub>t−1</sub> + Δe<sub>t</sub>)`],
+    ['UIP', `q<sub>t</sub> = E<sub>t</sub>q<sub>t+1</sub> − (i<sub>t</sub> − E<sub>t</sub>π<sup>H</sup><sub>t+1</sub> − i*<sub>t</sub>) + χ<sub>t</sub> + ξ<sub>t</sub>`],
+    ['TR', `i<sub>t</sub> = max( i<sub>LB</sub> , φ<sub>π</sub>[(1 − ω)π<sub>t</sub> + ω π<sup>H</sup><sub>t</sub>] + φ<sub>x</sub>x<sub>t</sub> + v<sub>t</sub> )`],
+    ['E', `E<sub>t</sub>π<sup>H</sup><sub>t+1</sub> = w<sub>t</sub>·π* + (1 − w<sub>t</sub>)·π<sup>H</sup><sub>t−1</sub> ,&nbsp; E<sub>t</sub>c<sub>t+1</sub> = c<sub>t−1</sub> ,&nbsp; E<sub>t</sub>q<sub>t+1</sub> = θ q<sub>t</sub>`],
+  ] : [
     ['IS', `x<sub>t</sub> = ${mTxt}E<sub>t</sub>x<sub>t+1</sub> − σ (i<sub>t</sub> − E<sub>t</sub>π<sub>t+1</sub> − r<sup>n</sup><sub>t</sub>)`],
     ['NKPC', `π<sub>t</sub> = β${mTxt ? '·' + mTxt : ''}E<sub>t</sub>π<sub>t+1</sub> + κ x<sub>t</sub> + u<sub>t</sub>`],
     ['TR', `i<sub>t</sub> = max( i<sub>LB</sub> , φ<sub>π</sub>π<sub>t</sub> + φ<sub>x</sub>x<sub>t</sub> + v<sub>t</sub> )`],
@@ -359,15 +407,15 @@ function equationsHtml(mode = state.settings.mode, m = state.params.expDiscount)
       <div class="eq ${id === 'E' && mode === 'rational' ? 'off' : ''}" data-eqrow="${id}">
         <div class="eq-tag">(${id})</div>
         <div class="eq-math">${math}</div>
-        <div class="eq-desc">${t(`equations.${id}`)}</div>
+        <div class="eq-desc">${t(`equations.${economy === 'open' && ['IS', 'NKPC', 'TR', 'E'].includes(id) ? `open${id}` : id}`)}</div>
       </div>`).join('')}
     </div>`;
 }
 
 function renderEquations() {
-  $('#equations').innerHTML = `<h2>${t('sections.equations')}</h2>
+  $('#equations').innerHTML = `<h2>${t('sections.equations')}${isOpen() ? ` <small>${t('economy.open')}</small>` : ''}</h2>
     ${equationsHtml()}
-    <p class="eq-levels">${t('equations.levels')}</p>`;
+    <p class="eq-levels">${t(isOpen() ? 'equations.levelsOpen' : 'equations.levels')}</p>`;
 }
 
 const activeView = () => document.getElementById(state.tab === 'game' ? 'view-game' : 'view-lab');
@@ -412,7 +460,7 @@ function seriesFor(results, pins, key, extra = []) {
 }
 
 function pinLabel(p) {
-  return `${t('runs.pinPrefix', { n: p.num })} · ${t(`runs.mode_${p.mode}`)}`;
+  return `${t('runs.pinPrefix', { n: p.num })} · ${t(`runs.mode_${p.mode}`)}${p.economy === 'open' ? ` · ${t('economy.openShort')}` : ''}`;
 }
 
 function refresh() {
@@ -420,7 +468,7 @@ function refresh() {
   const s = state.settings;
   const p = state.params;
   const n = s.horizon;
-  const det = determinacy(p);
+  const det = isOpen() ? openDeterminacy(p) : determinacy(p);
   // With the current parameters indeterminate, no rational path is drawn at all
   // (not even a comparison run that happens to be determinate).
   const valid = results.filter((r) => r.res.determinate && (det.determinate || r.mode !== 'rational'));
@@ -439,7 +487,7 @@ function refresh() {
     detBox.innerHTML = `<h2>${t('determinacy.title')}</h2>
       <p>${t('determinacy.body1', { v: fmt(taylorPrincipleValue(p), 4), th: fmt(th, 2) })}</p>
       <p>${t('determinacy.body2')}</p>
-      <p>${t('determinacy.body3', { eig: det.moduli.map((r) => fmt(r, 3)).join(' / ') })}</p>
+      <p>${t(isOpen() ? 'determinacy.body3Open' : 'determinacy.body3', { eig: det.moduli.map((r) => fmt(r, 3)).join(' / ') })}</p>
       ${p.expDiscount !== 1 ? `<p>${t('determinacy.discountNote')}</p>` : ''}
       ${s.mode === 'both' ? `<p>${t('determinacy.hybridNote')}</p>` : ''}
       <button type="button" class="btn small" id="fix-det">${t('buttons.fixDeterminacy')}</button>`;
@@ -464,7 +512,11 @@ function refresh() {
   const common = { n, format, quarterLabel };
   charts.gap.update({ ...common, series: seriesFor(valid, pins, 'gap'), refs: [] });
   charts.inflation.update({ ...common, series: seriesFor(valid, pins, 'inflation'), refs: [{ y: p.targetAnn, label: `${t('charts.target')} ${fmt(p.targetAnn, 1)} %` }] });
-  charts.nominal.update({ ...common, series: seriesFor(valid, pins, 'nominal'), bands, refs: [{ y: p.lowerBoundAnn, label: `${t('charts.lowerBound')} ${fmt(p.lowerBoundAnn, 2)} %` }] });
+  const neutralNominal = p.neutralRealAnn + p.targetAnn;
+  const foreignSeries = isOpen() && primary && primary.res.levels.foreignRate.some((v) => Math.abs(v - neutralNominal) > 1e-9) ? [{
+    key: 'foreign', label: t('charts.foreignRate'), color: 'var(--natural)', dash: '2 4', width: 2, values: primary.res.levels.foreignRate,
+  }] : [];
+  charts.nominal.update({ ...common, series: seriesFor(valid, pins, 'nominal', foreignSeries), bands, refs: [{ y: p.lowerBoundAnn, label: `${t('charts.lowerBound')} ${fmt(p.lowerBoundAnn, 2)} %` }] });
   charts.real.update({ ...common, series: seriesFor(valid, pins, 'real', naturalSeries), refs: [{ y: p.neutralRealAnn, label: `${t('charts.neutral')} ${fmt(p.neutralRealAnn, 1)} %` }] });
   const anchorRuns = p.endogenousAnchoring ? valid.filter((r) => r.mode === 'hybrid') : [];
   const anchorSeries = seriesFor(anchorRuns, pins.filter((x) => x.endogenous), 'w');
@@ -472,6 +524,32 @@ function refresh() {
   anchorEl.hidden = anchorSeries.length === 0;
   if (anchorSeries.length) {
     charts.anchoring.update({ ...common, series: anchorSeries, refs: [], yDomain: [0, 1], maxHeight: 190 });
+  }
+  // Open economy: the koruna and the two parts of CPI inflation.
+  $('#chart-fx').hidden = !isOpen();
+  $('#chart-components').hidden = !isOpen();
+  if (isOpen()) {
+    const floorBands = [];
+    if (primary?.res.atFloor) {
+      const q = primary.res.atFloor.map((b, k) => (b ? k : -1)).filter((k) => k >= 0);
+      for (let k = 0; k < q.length; k++) {
+        let j = k;
+        while (j + 1 < q.length && q[j + 1] === q[j] + 1) j++;
+        floorBands.push([q[k], q[j]]);
+        k = j;
+      }
+    }
+    const floorLevel = primary?.res.levels.fxFloor.find((v) => Number.isFinite(v));
+    charts.fx.update({
+      ...common, series: seriesFor(valid, pins, 'fx'), bands: floorBands,
+      refs: [{ y: p.eurCzk, label: `${t('charts.fxSteady')} ${fmt(p.eurCzk, 2)}` }, ...(floorLevel ? [{ y: floorLevel, label: `${t('charts.fxFloor')} ${fmt(floorLevel, 2)}` }] : [])],
+    });
+    const comp = [];
+    for (const r of valid) {
+      comp.push({ key: `${r.key}-dom`, label: `${t('charts.domestic')} · ${runLabel(r)}`, color: MODE_COLORS[r.mode], dash: r.variant === 'alt' ? ALT_DASH : null, width: r.variant === 'alt' ? 1.5 : 2, values: r.res.levels.domestic });
+      comp.push({ key: `${r.key}-imp`, label: `${t('charts.imported')} · ${runLabel(r)}`, color: 'var(--c-infl)', dash: r.variant === 'alt' ? ALT_DASH : null, width: r.variant === 'alt' ? 1.5 : 2, values: r.res.levels.imported });
+    }
+    charts.components.update({ ...common, series: comp, refs: [{ y: p.targetAnn, label: `${t('charts.target')} ${fmt(p.targetAnn, 1)} %` }] });
   }
   timeline.setN(n);
   state.quarter = Math.min(state.quarter, n - 1);
@@ -496,7 +574,7 @@ function renderLegend(valid, primary, hasBands) {
   for (const p of state.pins) {
     items.push(`<span class="legend-item" title="${p.summary}">${lineSwatch(p.color, null, 1.75)}${pinLabel(p)}${p.summary ? ` <span class="legend-note">(${p.summary})</span>` : ''}<button type="button" class="unpin" data-unpin="${p.id}" aria-label="${t('buttons.unpin')}" title="${t('buttons.unpin')}">×</button></span>`);
   }
-  if (primary) items.push(`<span class="legend-item">${lineSwatch('var(--natural)', '2 4', 2)}${t('charts.natural')}</span>`);
+  if (primary) items.push(`<span class="legend-item">${lineSwatch('var(--natural)', '2 4', 2)}${t(isOpen() ? 'charts.naturalForeign' : 'charts.natural')}</span>`);
   if (hasBands) items.push(`<span class="legend-note">${t('charts.atBound')}</span>`);
   $('#legend').innerHTML = items.join('');
 }
@@ -510,7 +588,7 @@ function renderStatus(results) {
     const res = r.res;
     const prefix = results.some((x) => x.mode !== r.mode) ? t('status.modeLabel', { mode: t(`modes.${r.mode}`) }) : '';
     let text = res.method === 'muc' ? t('status.muc')
-      : res.method === 'pf' ? t('status.pf', { T: res.T }) : t('status.forward');
+      : res.method === 'pf' ? t(res.economy === 'open' ? 'status.pfOpen' : 'status.pf', { T: res.T }) : t(res.economy === 'open' ? 'status.forwardOpen' : 'status.forward');
     if (res.method === 'pf' && boundQuarters(res).length) text += ` ${t('status.pfBound', { iter: res.iterations })}`;
     lines.push(`<div class="ok">${prefix}${text} ${t('status.residual', { r: res.residual.toExponential(1) })}</div>`);
     if (!res.converged) lines.push(`<div class="bad">${t('status.nonconv')}</div>`);
@@ -524,6 +602,9 @@ function renderExplain(valid, boundList) {
   const s = state.settings;
   const paras = sc.id === 'custom' ? t(`explain.custom.${s.kind}`) : t(`scenarios.${sc.id}.explain`);
   const notes = [];
+  if (isOpen() && sc.id !== 'koruna') notes.push(t('explain.mode.open'));
+  const floorQ = valid[0]?.res.atFloor ? valid[0].res.atFloor.map((b, k) => (b ? k : -1)).filter((k) => k >= 0) : [];
+  if (floorQ.length) notes.push(t('explain.note.floor', { list: ranges(floorQ), floor: fmt(s.floor ?? 27, 1) }));
   if (s.mode === 'hybrid' && sc.id !== 'deanchor') notes.push(t('explain.mode.hybrid'));
   if (s.mode === 'both') notes.push(t('explain.mode.both'));
   if (boundList) notes.push(t('explain.note.bound', { lb: fmt(state.params.lowerBoundAnn, 2), list: boundList }));
@@ -544,7 +625,8 @@ function stats(levels, atBound, p) {
     rmax = Math.max(rmax, levels.nominal[k]);
     loss += (levels.inflation[k] - p.targetAnn) ** 2 + 0.5 * levels.gap[k] ** 2;
   }
-  return { gapExt, inflExt, rmin, rmax, loss, bound: atBound ? atBound.filter(Boolean).length : 0 };
+  const fx = levels.fx ? { min: Math.min(...levels.fx), max: Math.max(...levels.fx) } : null;
+  return { gapExt, inflExt, rmin, rmax, loss, fx, bound: atBound ? atBound.filter(Boolean).length : 0 };
 }
 
 function renderNumbers(valid) {
@@ -559,13 +641,14 @@ function renderNumbers(valid) {
       <thead><tr>
         <th>${t('numbers.run')}</th><th>${t('numbers.gapExt')}</th><th>${t('numbers.inflExt')}</th>
         <th>${t('numbers.rateMin')}</th><th>${t('numbers.rateMax')}</th><th>${t('numbers.atBound')}</th>
+        ${isOpen() ? `<th>${t('numbers.fx')}</th>` : ''}
         <th title="${t('numbers.lossTip')}">${t('numbers.loss')}</th>
       </tr></thead>
       <tbody>${rows.map((r) => `<tr>
         <td>${r.swatch}${r.label}</td>
         <td>${fmt(r.st.gapExt, 2)} %</td><td>${fmt(r.st.inflExt, 2)} %</td>
         <td>${fmt(r.st.rmin, 2)} %</td><td>${fmt(r.st.rmax, 2)} %</td>
-        <td>${r.st.bound}</td><td>${fmt(r.st.loss, 1)}</td>
+        <td>${r.st.bound}</td>${isOpen() ? `<td>${r.st.fx ? `${fmt(r.st.fx.min, 2)}–${fmt(r.st.fx.max, 2)}` : '–'}</td>` : ''}<td>${fmt(r.st.loss, 1)}</td>
       </tr>`).join('')}</tbody>
     </table></div>
     <p class="numbers-note">${t('numbers.lossTip')}</p>`;
@@ -636,6 +719,7 @@ function pinCurrent() {
       id: `pin-${state.pinCounter}`,
       num: state.pinCounter,
       mode: r.mode,
+      economy: state.settings.economy,
       color,
       levels: r.res.levels,
       w: r.res.w,
@@ -658,6 +742,8 @@ function createCharts() {
     ['inflation', 'charts.inflation', 'charts.inflationUnit'],
     ['nominal', 'charts.nominal', 'charts.nominalUnit'],
     ['real', 'charts.real', 'charts.realUnit'],
+    ['fx', 'charts.fx', 'charts.fxUnit'],
+    ['components', 'charts.components', 'charts.inflationUnit'],
     ['anchoring', 'charts.anchoring', 'charts.anchoringUnit'],
   ];
   for (const [id, title, unit] of defs) {
@@ -743,7 +829,7 @@ async function main() {
     onQuarter: (q) => setQuarter(q, true),
     onRun: (key) => { state.liveRun = key; updateLive(lastResults); },
   });
-  gameView = createGameView($('#view-game'), { equationsHtml: () => equationsHtml('hybrid', 1) });
+  gameView = createGameView($('#view-game'), { equationsHtml: (economy) => equationsHtml('hybrid', 1, economy) });
   gameView.setTimelineTexts(timelineTexts);
   bindControls();
   bindGlobal();

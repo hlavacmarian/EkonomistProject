@@ -4,7 +4,7 @@ Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Wo
 
 > **Výukový model s učebnicovou kalibrací, ne předpověď.** Čísla ilustrují mechanismy a nepopisují českou ani jinou skutečnou ekonomiku.
 
-Stav: **Fáze 1 (laboratoř šoků) a fáze 2 (živý diagram a hra „Buď ČNB“).** Fáze 3 (malá otevřená ekonomika) a 4 (agentní simulace) zatím chybí.
+Stav: **Fáze 1 (laboratoř šoků), fáze 2 (živý diagram a hra „Buď ČNB“) a fáze 3 (malá otevřená ekonomika s kurzem koruny).** Fáze 4 (agentní simulace) zatím chybí.
 
 ## Spuštění
 
@@ -36,12 +36,15 @@ src/model/            jádro modelu: čisté ES moduly bez DOM, pokryté testy
   rational.js         racionální očekávání: neurčité koeficienty + dokonalé předvídání s dolní mezí
   hybrid.js           hybridní/adaptivní očekávání: stepHybrid (jedno čtvrtletí) a solveHybrid (celá cesta), endogenní ukotvení
   check.js            rezidua (dosazení řešení zpět do rovnic)
-  decompose.js        rozklad proměnných na příspěvky členů rovnic, šipky diagramu
-  index.js            veřejné API: simulate(spec, mode)
+  open.js             malá otevřená ekonomika: dokonalé předvídání (pásová eliminace), krokování, determinace, rezidua
+  linalg.js           Gaussova eliminace (hustá i pásová), vlastní čísla malých matic
+  decompose.js        rozklad proměnných na příspěvky členů rovnic, šipky diagramu (uzavřená i otevřená)
+  index.js            veřejné API: simulate(spec, mode), spec.economy = 'closed' | 'open'
 src/game/             logika hry „Buď ČNB“: bez DOM, pokrytá testy
   rng.js              seedovaný generátor (mulberry32) a normální rozdělení
   game.js             šoky, šum v datech, pozorování se zpožděním, tah hráče, odvolání
   evaluate.js         ztrátová funkce, autopilot, pravidlo na datech hráče, pravidlový rozbor chyb
+  economy.js          hra nad uzavřenou nebo otevřenou ekonomikou (stejné rozhraní krok / start / cesta)
 src/scenarios.js      připravené scénáře (čistá data, testované)
 src/ui/               vykreslování: app.js, chart.js a bars.js (vlastní SVG grafy), diagram.js,
                       live.js (diagram + rozklad), timeline.js, game.js (obrazovky hry), i18n.js, styles.css
@@ -141,9 +144,32 @@ Hráč každé čtvrtletí nastaví nominální sazbu (krok 0,25 p. b., ne pod d
   
   Na jedno rozhodnutí připadá nejvýš jeden jednorázový nález (priorita: nabídkový šok > přehnaná reakce > šum). Nálezy se řadí podle toho, kolik stály: rozdíl ztráty hráče a autopilota v daném a následujících 4 čtvrtletích. Texty jsou šablony v `locales/`, žádný jazykový model.
 
+## Malá otevřená ekonomika (fáze 3)
+
+Přepínač **Uzavřená / Otevřená** je v laboratoři i ve hře. Uzavřený model zůstává beze změny. Otevřený model je zjednodušená malá otevřená ekonomika ve stylu Galí & Monacelli (2005), zapsaná v polostrukturní podobě, kterou používají centrální banky s cílováním inflace. Místo úplného sdílení rizika obsahuje nekrytou úrokovou paritu s rizikovou prémií, takže lze zkoumat šoky kurzu a kurzový závazek. Proměnné jsou čtvrtletní odchylky v %. q je reálný kurz (kladný = slabší koruna) a e = q + p<sup>H</sup> je nominální kurz (zahraniční ceny jsou konstantní).
+
+| Rovnice | |
+|---|---|
+| **(IS)** poptávka = domácí poptávka + čistý vývoz | x<sub>t</sub> = c<sub>t</sub> + δ q<sub>t</sub> + γ y\*<sub>t</sub>,  c<sub>t</sub> = m·E<sub>t</sub>c<sub>t+1</sub> − σ (i<sub>t</sub> − E<sub>t</sub>π<sup>H</sup><sub>t+1</sub> − rⁿ<sub>t</sub>) |
+| **(NKPC)** inflace domácího zboží | π<sup>H</sup><sub>t</sub> = β·m·E<sub>t</sub>π<sup>H</sup><sub>t+1</sub> + κ x<sub>t</sub> + u<sub>t</sub> |
+| **(CPI)** spotřebitelská inflace | π<sub>t</sub> = (1 − α) π<sup>H</sup><sub>t</sub> + α π<sup>F</sup><sub>t</sub>,  π<sup>F</sup><sub>t</sub> = ψ (d<sub>t−1</sub> + Δe<sub>t</sub>),  d<sub>t</sub> = (1 − ψ)(d<sub>t−1</sub> + Δe<sub>t</sub>) |
+| **(UIP)** nekrytá úroková parita | q<sub>t</sub> = E<sub>t</sub>q<sub>t+1</sub> − (i<sub>t</sub> − E<sub>t</sub>π<sup>H</sup><sub>t+1</sub> − i\*<sub>t</sub>) + χ<sub>t</sub> + ξ<sub>t</sub> |
+| **(TR)** pravidlo s dolní mezí | i<sub>t</sub> = max(i<sub>LB</sub>, φ<sub>π</sub>[(1 − ω)π<sub>t</sub> + ω π<sup>H</sup><sub>t</sub>] + φ<sub>x</sub>x<sub>t</sub> + v<sub>t</sub>) |
+| **kurzový závazek** | e<sub>t</sub> ≥ ē, ξ<sub>t</sub> ≥ 0, ξ<sub>t</sub>(e<sub>t</sub> − ē) = 0 (intervence jen na hranici) |
+
+- **Zahraniční šoky:** i\* = zahraniční sazba (p. b. p.a., dělí se 4), y\* = zahraniční poptávka (% potenciálu), χ = riziková prémie, tedy šok kurzu (p. b. p.a., dělí se 4).
+- **Kalibrace:** α = 0,35 (podíl dovozu v CPI), δ = 0,1 (čistý vývoz na 1 % reálného oslabení), γ = 0,5 (na 1 % zahraniční mezery), ψ = 0,2 (rychlost přenosu kurzu do cen dovozu za čtvrtletí), θ = 0,8 (očekávání kurzu v hybridním režimu), ω = 0 (banka reaguje na CPI), výchozí kurz 25,7 CZK/EUR (jen pro zobrazení).
+- **Proč ψ = 0,2:** s rychlým přenosem (ψ = 0,5) se pravidlo reagující se zpožděním na CPI rozkmitá. Sazba hned pohne kurzem, kurz hned pohne cenami dovozu a pravidlo o čtvrtletí později odpoví ještě silněji (zisk smyčky > 1). Ve hře pak pravidlo na zašuměných datech končilo odvoláním v 90 % her. Pomalý přenos odpovídá i datům.
+- **Racionální očekávání:** dokonalé předvídání přes T = max(130, horizont + 90) čtvrtletí s terminální podmínkou c<sub>T</sub> = π<sup>H</sup><sub>T</sub> = q<sub>T</sub> = 0. Pro AR(1) šoky je to totéž co racionální očekávání (jistotní ekvivalence), useknutí horizontu dělá v zobrazeném okně chybu pod 1e-4. Soustava má 9 neznámých na čtvrtletí (x, c, π<sup>H</sup>, π, π<sup>F</sup>, d, q, i, p<sup>H</sup>) a každá rovnice spojuje jen t − 1, t a t + 1. Při řazení podle času je tedy pásová a řeší se Gaussovou eliminací v pásu (`solveBanded`) za O(n·b²) místo O(n³). Dolní mez i hranici kurzu řeší guess-and-verify současně přes dvě množiny režimů: na hranici se řádek UIP nahradí podmínkou e<sub>t</sub> = ē a ověřuje se ξ<sub>t</sub> ≥ 0, mimo ni e<sub>t</sub> ≥ ē.
+- **Hybridní očekávání:** E c<sub>t+1</sub> = c<sub>t−1</sub>, E π<sup>H</sup><sub>t+1</sub> = (1 − w<sub>t</sub>)π<sup>H</sup><sub>t−1</sub> a regresivní očekávání kurzu E q<sub>t+1</sub> = θ q<sub>t</sub> (Dornbusch), takže kurz reaguje na úrokový rozdíl ve stejném čtvrtletí. Všechny současné proměnné jsou afinní v sazbě i a v intervenci ξ, proto se krok (`stepOpen`) vyřeší přesně: nejdřív pravidlo s mezí, a když by koruna byla silnější než hranice, dopočítá se ξ tak, aby e = ē.
+- **Determinace:** E z<sub>t+1</sub> = A z<sub>t</sub> pro z = (c, π<sup>H</sup>, q, q<sub>t−1</sub>, d<sub>t−1</sub>). Tři proměnné hledí dopředu, takže jednoznačnost vyžaduje tři vlastní čísla mimo jednotkový kruh. Vlastní čísla 5×5 matice se počítají z charakteristického polynomu (Faddeev–LeVerrier, Durand–Kerner). Jedno vlastní číslo je vždy přesně 1: trvalé reálné oslabení vyrovnané nižší domácí poptávkou nemění výstup, inflaci ani sazbu. Jako v jiných modelech s UIP bez stabilizačního členu ho ukotvuje dlouhodobá podmínka q<sub>∞</sub> = c<sub>∞</sub> = 0, a proto se počítá k nestabilním kořenům.
+- **Rozklad a diagram:** poptávka = očekávaná domácí poptávka + očekávaná inflace − sazba + přirozená sazba + čistý vývoz (δq) + zahraniční poptávka (γy\*); CPI = (1 − α)·[očekávání + mezera + šok] + α·π<sup>F</sup>; kurz = očekávaný kurz + očekávaná inflace − domácí sazba + zahraniční sazba + prémie + intervence. V diagramu přibývá uzel **Kurz koruny** se šipkami od banky (sazba, intervence) a od očekávání. Šipky od něj vedou k inflaci (ceny dovozu) a k poptávce (čistý vývoz, oblouk přes horní okraj). Testy ověřují, že se šipky do každého uzlu sečtou na jeho hodnotu.
+- **Scénář 5, kurzový závazek ČNB (2013–2017):** domácí propad poptávky (−2 p. b.), recese v eurozóně (y\* −1,5 %) a nízké sazby ECB (i\* −1 p. b.) na 10 čtvrtletí. Banka se dívá skrz dovozní inflaci (ω = 1) a od 1. čtvrtletí po dobu 12 čtvrtletí nedovolí posílení koruny pod 27 CZK/EUR. V racionálním režimu závazek odvrátí deflaci (bez něj CPI −5 %, se závazkem kolem cíle) a ztrátu sníží zhruba čtyřikrát, hlavně přes očekávání vyšší inflace na nulové mezi. Těsně před koncem závazku prudce rostou intervence, protože trh čeká posílení. V hybridním režimu bez kanálu očekávání závazek pomáhá málo. Přepnutí na ω = 0 ukazuje, jak by banka reagující na CPI závazek sama podkopala.
+- **Hra v otevřené ekonomice:** stejná pravidla, navíc zahraniční šoky ze samostatného proudu téhož seedu, takže domácí šoky jsou stejné jako v uzavřené hře. Zahraniční sazba: AR(1), ρ = 0,9, σ = 0,15. Zahraniční poptávka: ρ = 0,8, σ = 0,4, události 5 %, ±3σ, častěji dolů. Prémie: ρ = 0,7, σ = 0,7, události 5 %, ±3,5σ, častěji oslabení. Kurz hráč vidí přesně a hned, protože jde o tržní cenu, ostatní data jako dřív. Vyhodnocení přidává graf kurzu, zahraniční šoky a diagram s kurzem.
+
 ### Ověření
 
-Unit testy (`npm test`, celkem 91):
+Unit testy (`npm test`, celkem 145):
 
 - dosazení řešení do rovnic dá rezidua < 1e-9 pro všechny typy šoků, oba režimy, dolní mez, forward guidance, zpoždění a diskontování;
 - metoda dokonalého předvídání konverguje k analytickému řešení neurčitými koeficienty;
@@ -156,7 +182,12 @@ Unit testy (`npm test`, celkem 91):
 - rozklad: součet příspěvků = proměnná (< 1e-9) a šipky do uzlu diagramu se sečtou na jeho hodnotu, mez a slib se projeví ve správném členu;
 - krokové API: krokování po čtvrtletích dá přesně `solveHybrid`, vstupní stav se nemění, sazba pod mezí se zvedne na mez, pomalé ukotvení roste u cíle a klesá při úniku inflace;
 - hra: stejný seed = stejné šoky, šum, zprávy i výsledek; delší hra začíná stejně; obtížnost škáluje šoky a ne šum; hráč vidí jen zpožděná zašuměná data; šum mezery je větší než šum inflace; zaokrouhlení a mez sazby; autopilot = `solveHybrid` se stejnými šoky; ztráta na ručně spočítaném případu; odvolání;
-- rozbor: každé pravidlo na připraveném případu (pozdní reakce, přehnaná reakce, reakce na šum, uvolnění při nabídkovém šoku), klidná hra bez výtek, žádná „reakce na šum“, když data byla pravdivá, řazení podle ceny.
+- rozbor: každé pravidlo na připraveném případu (pozdní reakce, přehnaná reakce, reakce na šum, uvolnění při nabídkovém šoku), klidná hra bez výtek, žádná „reakce na šum“, když data byla pravdivá, řazení podle ceny;
+- otevřená ekonomika: bez obchodu (α = δ = γ = 0) se shoduje s uzavřeným modelem na 1e-9 v obou režimech (i se slibem a zpožděním); rezidua < 1e-9 pro všechny šoky, mez, hranici kurzu, ω, diskontování i okamžitý přenos; pásový řešič = hustý; krokování = celá cesta; dostatečný horizont;
+- otevřená ekonomika, znaménka: zahraniční recese snižuje výstup i domácí inflaci a oslabuje korunu; šok prémie a vyšší zahraniční sazba korunu oslabí a zvednou CPI; zpřísnění korunu posílí a CPI reaguje rychleji než v uzavřené ekonomice; bez šoků ustálený stav;
+- otevřená ekonomika, mez a závazek: sazba nikdy pod mezí a koruna nikdy pod hranicí (60 náhodných kalibrací × 2 režimy), intervence jen jedním směrem a jen přesně na hranici, závazek v racionálním režimu odvrací deflaci; determinace (výchozí ano, pasivní pravidlo ne, bez obchodu shodně s uzavřeným modelem na 300 kalibracích); rozklad a šipky čtyř uzlů;
+- hra v otevřené ekonomice: opakovatelnost, domácí šoky shodné s uzavřenou hrou, kurz viditelný přesně, hra = `solveOpenHybrid` s hráčovými sazbami, autopilot = `solveOpenHybrid` s pravidlem, pravidlo na datech je stabilní (žádné odvolání na 40 seedech), vyšší sazba posílí korunu ve stejném čtvrtletí;
+- uzavřené hry se stejným seedem dávají přesně stejné šoky jako ve fázi 2 (ověřeno proti commitu fáze 2).
 
 UI navíc u každého běhu zobrazí použitou metodu a maximální reziduum.
 
@@ -166,6 +197,9 @@ UI navíc u každého běhu zobrazí použitou metodu a maximální reziduum.
 2. **Propad poptávky:** pokles přirozené sazby, srovnání s Hallovou σ = 0,2.
 3. **Nulová mez + forward guidance:** schod −5 p. b. na 6 čtvrtletí, slib držet sazbu na mezi N čtvrtletí po konci šoku, srovnání se slibem a bez něj, hádanka forward guidance a parametr m.
 4. **Odkotvení očekávání:** nákladový šok, zpožděná reakce banky, endogenní ukotvení v hybridním režimu, srovnání s včasnou reakcí.
+5. **Kurzový závazek ČNB (2013–2017)** (fáze 3, jen otevřená ekonomika): viz výše.
+
+Scénáře 1–4 i vlastní šok lze spustit i v otevřené ekonomice a porovnat s uzavřenou přes připnuté běhy. Vlastní šok v otevřené ekonomice nabízí i zahraniční sazbu, zahraniční poptávku a šok kurzu.
 
 Každý běh lze spustit racionálně, hybridně, nebo v obou režimech v jednom grafu. Tlačítkem „Připnout“ lze uložit až 4 běhy a překrýt je s dalšími.
 
@@ -177,3 +211,9 @@ Každý běh lze spustit racionálně, hybridně, nebo v obou režimech v jednom
 - Del Negro, M., Giannoni, M., Patterson, C. (2012/2023). The Forward Guidance Puzzle.
 - McKay, A., Nakamura, E., Steinsson, J. (2016). The Power of Forward Guidance Revisited. *American Economic Review* 106(10).
 - Gabaix, X. (2020). A Behavioral New Keynesian Model. *American Economic Review* 110(8).
+- Galí, J., Monacelli, T. (2005). Monetary Policy and Exchange Rate Volatility in a Small Open Economy. *Review of Economic Studies* 72(3).
+- Svensson, L. E. O. (2000). Open-Economy Inflation Targeting. *Journal of International Economics* 50(1).
+- Dornbusch, R. (1976). Expectations and Exchange Rate Dynamics. *Journal of Political Economy* 84(6).
+- Schmitt-Grohé, S., Uribe, M. (2003). Closing Small Open Economy Models. *Journal of International Economics* 61(1).
+- Berg, A., Karam, P., Laxton, D. (2006). Practical Model-Based Monetary Policy Analysis: A How-To Guide. IMF Working Paper 06/81.
+- Franta, M., Holub, T., Král, P., Kubicová, I., Šmídková, K., Vašíček, B. (2014). The Exchange Rate as an Instrument at Zero Interest Rates: The Case of the Czech Republic. ČNB Research and Policy Notes 3/2014.

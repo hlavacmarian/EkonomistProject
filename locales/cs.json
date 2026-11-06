@@ -21,7 +21,8 @@
     "equations": "Rovnice modelu",
     "explain": "Co se děje a proč",
     "numbers": "Klíčová čísla",
-    "pins": "Připnuté běhy"
+    "pins": "Připnuté běhy",
+    "open": "Otevřená ekonomika"
   },
   "buttons": {
     "reset": "Obnovit výchozí",
@@ -33,7 +34,9 @@
     "info": "Co to znamená?",
     "tryHall": "Vyzkoušet σ = 0,2",
     "tryDiscount": "Vyzkoušet m = 0,85",
-    "fixDeterminacy": "Nastavit φ<sub>π</sub> = 1,5"
+    "fixDeterminacy": "Nastavit φ<sub>π</sub> = 1,5",
+    "tryCpiRule": "Vyzkoušet ω = 0 (reakce na CPI)",
+    "tryDomesticRule": "Vyzkoušet ω = 1 (domácí inflace)"
   },
   "modes": {
     "rational": "Racionální",
@@ -46,14 +49,20 @@
     "kinds": {
       "rn": "Poptávkový (přirozená sazba rⁿ)",
       "u": "Nákladový (u)",
-      "v": "Měnový (v)"
+      "v": "Měnový (v)",
+      "istar": "Zahraniční sazba (i*)",
+      "ystar": "Zahraniční poptávka (y*)",
+      "chi": "Šok kurzu (riziková prémie χ)"
     },
     "size": "Velikost šoku",
     "sizeUnit": "p. b. p.a.",
     "sizeTip": {
       "rn": "O kolik procentních bodů (anualizovaně) se změní přirozená reálná sazba rⁿ — sazba, při které by poptávka přesně odpovídala potenciálu. Záporná hodnota = propad poptávky (lidé chtějí víc spořit, firmy méně investovat).",
       "u": "O kolik procentních bodů (anualizovaně) nákladový šok přímo zvedne inflaci v rovnici NKPC, i bez přehřáté poptávky. Kladná hodnota = dražší energie, suroviny, vyšší přirážky.",
-      "v": "O kolik procentních bodů (anualizovaně) banka nastaví sazbu nad úroveň danou pravidlem. Kladná hodnota = neočekávané zpřísnění."
+      "v": "O kolik procentních bodů (anualizovaně) banka nastaví sazbu nad úroveň danou pravidlem. Kladná hodnota = neočekávané zpřísnění.",
+      "istar": "O kolik procentních bodů (anualizovaně) se změní sazba v zahraničí, třeba sazba ECB. Kladná hodnota = zahraniční zpřísnění. Úroky v eurech se zvýší, investoři přesunou peníze do eur a koruna oslabí [[UIP]].",
+      "ystar": "O kolik procent potenciálu se změní poptávka v zahraničí, hlavně v eurozóně. Záporná hodnota = zahraniční recese. Šok přímo snižuje český vývoz [[IS]].",
+      "chi": "Riziková prémie: o kolik procentních bodů (anualizovaně) víc investoři chtějí za držení korun. Kladná hodnota = investoři korunu prodávají a koruna oslabí [[UIP]]. Prémie +2 p. b. s perzistencí 0,8 oslabí korunu zhruba o 2 až 3 %."
     },
     "rho": "Perzistence ρ",
     "rhoTip": "Jak dlouho šok vydrží: každé čtvrtletí zbude ρ-násobek minulé velikosti. ρ = 0,8 znamená poločas asi 3 čtvrtletí, ρ = 0,95 asi 13 čtvrtletí. Perzistentní šok mění očekávání víc, a proto má větší okamžitý dopad.",
@@ -76,7 +85,11 @@
     "fg": "Slib: sazba na mezi ještě N čtvrtletí po skončení šoku",
     "fgUnit": "čtv.",
     "fgTip": "Forward guidance: banka se zaváže držet sazbu na dolní mezi až do čtvrtletí (konec šoku + N), i když by ji pravidlo zvedlo dřív. V racionálním režimu slib působí přes očekávání už dnes. Funguje jen pro šok typu „schod“.",
-    "fgNeedsStep": "Slib se vztahuje ke konci šoku, proto je dostupný jen pro šok typu „Dočasný schod“."
+    "fgNeedsStep": "Slib se vztahuje ke konci šoku, proto je dostupný jen pro šok typu „Dočasný schod“.",
+    "floor": "Kurzový závazek: koruna ne silnější než",
+    "floorTip": "ČNB v listopadu 2013 slíbila, že nedovolí posílení koruny pod 27 CZK/EUR, a tuto hranici bránila nákupy eur (intervencemi). V modelu je to dolní hranice pro kurz [[UIP]]: když by trh chtěl korunu silnější, banka intervenuje (ξ > 0) a kurz drží přesně na hranici.",
+    "commitment": "Délka závazku",
+    "commitmentTip": "Kolik čtvrtletí od 1. čtvrtletí banka hranici kurzu brání. Skutečný závazek trval od listopadu 2013 do dubna 2017, tedy asi 14 čtvrtletí. V racionálním režimu lidé konec závazku předvídají."
   },
   "params": {
     "beta": {
@@ -138,6 +151,35 @@
     "anchorMemory": {
       "label": "Rychlost paměti λ",
       "tip": "Jak rychle se poslední odchylka inflace propíše do paměti s<sub>t</sub> = (1 − λ)s<sub>t−1</sub> + λ|π<sub>t</sub> − π*|. Malé λ = lidé si pamatují dlouho, ztrácejí i získávají důvěru pomalu."
+    },
+    "alpha": {
+      "label": "α — podíl dovozu ve spotřebním koši",
+      "tip": "Jaká část spotřebitelských cen připadá na dovážené zboží. Česká ekonomika je velmi otevřená, proto výchozí 0,35. Čím vyšší α, tím víc kurz koruny hýbe inflací [[CPI]] a tím silnější je kurzový kanál měnové politiky."
+    },
+    "delta": {
+      "label": "δ — citlivost vývozu na kurz",
+      "tip": "O kolik procent potenciálu se zvýší čistý vývoz, když koruna reálně oslabí o 1 % [[IS]]. Slabší koruna zlevní české zboží v zahraničí a zdraží dovoz, takže poptávka se přesune k domácím výrobcům."
+    },
+    "gamma": {
+      "label": "γ — citlivost na zahraniční poptávku",
+      "tip": "O kolik procent potenciálu se změní česká mezera výstupu, když se zahraniční (eurozónová) mezera změní o 1 % [[IS]]. Vývoz tvoří u nás velkou část HDP, proto je γ vysoké."
+    },
+    "passThrough": {
+      "label": "ψ — rychlost přenosu kurzu do cen",
+      "tip": "Jakou část rozdílu mezi kurzem a cenami dovozu dovozci každé čtvrtletí dorovnají [[CPI]]. ψ = 1 znamená okamžitý a úplný přenos. Výchozí ψ = 0,2: do cen dovozu se každé čtvrtletí promítne pětina zbývajícího rozdílu, takže oslabení koruny zdražuje dovoz postupně, jak to ukazují data. Rychlý přenos (zkus 0,5 a víc) dělá z kurzu silný, ale neklidný kanál: pravidlo reagující se zpožděním na CPI pak začne kmitat."
+    },
+    "fxExpect": {
+      "label": "θ — očekávání kurzu (hybridní režim)",
+      "tip": "Hybridní režim: lidé čekají, že se kurz bude vracet k rovnováze, E<sub>t</sub>q<sub>t+1</sub> = θ·q<sub>t</sub> (regresivní očekávání, Dornbusch). θ = 0,8: z dnešní odchylky kurzu zbude za čtvrtletí 80 %. Čím vyšší θ, tím silněji kurz reaguje na úrokový rozdíl [[UIP]]. V racionálním režimu se očekávání kurzu počítají z modelu."
+    },
+    "ruleDomestic": {
+      "label": "ω — banka reaguje na domácí inflaci",
+      "tip": "Na jakou inflaci reaguje Taylorovo pravidlo [[TR]]: 0 = na celkovou spotřebitelskou inflaci (CPI), 1 = jen na inflaci domácího zboží, tedy „dívá se skrz“ přímý dopad kurzu na ceny dovozu. Galí a Monacelli (2005) ukázali, že v jejich modelu je cílování domácí inflace nejlepší. ČNB cílovala CPI, ale při kurzovém závazku přímý dopad slabší koruny na ceny tolerovala."
+    },
+    "eurCzk": {
+      "label": "Výchozí kurz",
+      "unit": "CZK/EUR",
+      "tip": "Kurz koruny v ustáleném stavu. Slouží jen pro zobrazení: model pracuje s procentní odchylkou kurzu. Výchozí 25,7 CZK/EUR odpovídá kurzu na podzim 2013 těsně před kurzovým závazkem."
     }
   },
   "charts": {
@@ -155,7 +197,16 @@
     "lowerBound": "dolní mez",
     "neutral": "r*",
     "natural": "přirozená rⁿ",
-    "atBound": "stínování = sazba na mezi"
+    "atBound": "stínování = sazba na mezi",
+    "foreignRate": "zahraniční sazba i*",
+    "naturalForeign": "přirozená rⁿ / zahraniční sazba",
+    "fx": "Kurz koruny",
+    "fxUnit": "CZK/EUR (víc = slabší koruna)",
+    "fxSteady": "výchozí",
+    "fxFloor": "závazek",
+    "components": "Inflace domácího zboží a dovozu",
+    "domestic": "domácí zboží",
+    "imported": "dovoz"
   },
   "runs": {
     "main": "Aktuální nastavení",
@@ -169,7 +220,9 @@
     "mode_hybrid": "hybridní",
     "pinPrefix": "Připnuto {n}",
     "pinsEmpty": "Zatím nic. Připni běh, změň parametr a porovnej křivky.",
-    "pinsFull": "Najednou lze připnout nejvýš {n} běhů."
+    "pinsFull": "Najednou lze připnout nejvýš {n} běhů.",
+    "withFloor": "Se závazkem ({n} CZK/EUR)",
+    "noFloor": "Bez závazku"
   },
   "status": {
     "muc": "Řešení: metoda neurčitých koeficientů (analyticky; AR(1) šok, dolní mez neváže).",
@@ -179,7 +232,9 @@
     "residual": "Kontrola dosazením: max. reziduum rovnic {r}",
     "nonconv": "Iterace režimů na mezi nekonvergovala — výsledek může být nespolehlivý. Zkus menší šok nebo kratší slib.",
     "unstable": "Hybridní dráha je explozivní: s těmito parametry a adaptivními očekáváními se ekonomika nestabilizuje.",
-    "modeLabel": "{mode}: "
+    "modeLabel": "{mode}: ",
+    "pfOpen": "Řešení: dokonalé předvídání pro otevřenou ekonomiku. Jeden lineární systém 9T×9T přes T = {T} čtvrtletí s terminální podmínkou c<sub>T</sub> = π<sup>H</sup><sub>T</sub> = q<sub>T</sub> = 0, řešený pásovou eliminací.",
+    "forwardOpen": "Řešení: krokování vpřed; v každém čtvrtletí se současně řeší IS, NKPC, CPI, kurz (UIP) a pravidlo s dolní mezí i s hranicí kurzu."
   },
   "determinacy": {
     "title": "Racionální režim: model nemá jednoznačné řešení",
@@ -187,7 +242,8 @@
     "body2": "Proč bez toho řešení není jednoznačné: když banka reaguje slabě, vyšší očekávaná inflace <em>sníží</em> reálnou sazbu i − E<sub>t</sub>π<sub>t+1</sub>. To přes rovnici IS povzbudí poptávku a přes NKPC skutečně zvýší inflaci — očekávání se sama naplní. Funguje to pro libovolnou (ohraničenou) cestu očekávání, i bez jakéhokoli šoku („sunspots“). Model tedy neumí říct, která z nekonečně mnoha cest nastane, a proto žádnou nekreslíme.",
     "body3": "Technicky: soustava E<sub>t</sub>z<sub>t+1</sub> = A z<sub>t</sub> pro z = (x, π) má dvě dopředu hledící proměnné, a jednoznačnost vyžaduje, aby obě vlastní čísla A ležela mimo jednotkový kruh. Teď mají absolutní hodnoty {eig}.",
     "discountNote": "Při m < 1 se podmínka mění; aplikace ji ověřuje přímo přes vlastní čísla.",
-    "hybridNote": "Hybridní režim se dívá do minulosti, takže řešení je jednoznačné i tady — jen nemusí být stabilní."
+    "hybridNote": "Hybridní režim se dívá do minulosti, takže řešení je jednoznačné i tady — jen nemusí být stabilní.",
+    "body3Open": "Technicky: otevřená ekonomika má tři dopředu hledící proměnné (domácí poptávku, domácí inflaci a reálný kurz) a dvě předurčené (minulý kurz a mezeru cen dovozu). Jednoznačnost vyžaduje tři vlastní čísla mimo jednotkový kruh. Jedno vlastní číslo je vždy přesně 1 (trvalé oslabení vyrovnané nižší domácí poptávkou), to ukotvuje dlouhodobá podmínka q → 0. Teď mají absolutní hodnoty {eig}."
   },
   "numbers": {
     "run": "Běh",
@@ -197,14 +253,22 @@
     "rateMax": "Max. sazba",
     "atBound": "Čtvrtletí na mezi",
     "loss": "Ztráta",
-    "lossTip": "Součet přes zobrazený horizont: (π − π*)² + 0,5·x², π v % p.a. Menší = lepší stabilizace. Jen pro srovnání běhů."
+    "lossTip": "Součet přes zobrazený horizont: (π − π*)² + 0,5·x², π v % p.a. Menší = lepší stabilizace. Jen pro srovnání běhů.",
+    "fx": "Kurz (min–max)"
   },
   "equations": {
     "IS": "Poptávka (IS, Hallova Eulerova rovnice): dnešní poptávka = očekávaná budoucí poptávka minus σ × (reálná sazba − přirozená sazba).",
     "NKPC": "Inflace (novokeynesiánská Phillipsova křivka): dnešní inflace = diskontovaná očekávaná inflace + κ × mezera + nákladový šok.",
     "TR": "Centrální banka (Taylorovo pravidlo s dolní mezí).",
     "E": "Hybridní očekávání (jen v hybridním režimu).",
-    "levels": "Proměnné jsou čtvrtletní odchylky od ustáleného stavu; grafy ukazují anualizované úrovně: π v % p.a. = 4π + π*, i v % p.a. = 4i + r* + π*. Šoky jsou AR(1): z<sub>t</sub> = ρz<sub>t−1</sub>."
+    "levels": "Proměnné jsou čtvrtletní odchylky od ustáleného stavu; grafy ukazují anualizované úrovně: π v % p.a. = 4π + π*, i v % p.a. = 4i + r* + π*. Šoky jsou AR(1): z<sub>t</sub> = ρz<sub>t−1</sub>.",
+    "CPI": "Spotřebitelská inflace = (1 − α) × domácí zboží + α × dovoz. Ceny dovozu dobíhají kurz rychlostí ψ, Δe je změna kurzu (oslabení koruny = kladné).",
+    "UIP": "Nekrytá úroková parita: reálný kurz q (kladný = slabší koruna) = očekávaný kurz minus rozdíl reálných sazeb doma a v zahraničí, plus riziková prémie χ a intervence ČNB ξ ≥ 0.",
+    "openIS": "Poptávka = domácí poptávka c (Eulerova rovnice) + čistý vývoz: slabší reálný kurz δq a zahraniční poptávka γy*.",
+    "openNKPC": "Inflace domácího zboží: diskontovaná očekávaná domácí inflace + κ × mezera + nákladový šok.",
+    "openTR": "Centrální banka: Taylorovo pravidlo s dolní mezí. Reaguje na CPI (ω = 0) nebo na domácí inflaci (ω = 1).",
+    "openE": "Hybridní očekávání (jen v hybridním režimu): inflace a poptávka z minulosti, kurz se podle očekávání vrací k rovnováze.",
+    "levelsOpen": "Proměnné jsou čtvrtletní odchylky od ustáleného stavu. Grafy ukazují anualizované úrovně (π v % p.a. = 4π + π*) a kurz v CZK/EUR = výchozí kurz × (1 + e/100), kde e = q + p<sup>H</sup> je nominální kurz. Zahraniční ceny jsou konstantní."
   },
   "scenarios": {
     "custom": {
@@ -254,6 +318,18 @@
         "Čárkovaně: <b>včasná reakce</b> (bez zpoždění). Inflace se vrátí do pásma, ukotvení vydrží a ztráta je menší. Důvěryhodnost je kapitál, který se těžko buduje a snadno ztrácí.",
         "V racionálním režimu (přepni na „Obě“) zpoždění také škodí: pevná sazba při rostoucí inflaci dočasně porušuje Taylorův princip, reálná sazba klesá a inflace vyskočí. Racionální agenti ale vědí, že banka později zasáhne, takže se inflace neodkotví a po zásahu rychle klesá."
       ]
+    },
+    "koruna": {
+      "title": "5 · Kurzový závazek ČNB (2013–2017)",
+      "short": "Sazby na nule, hrozí deflace. Pomůže slib nedovolit posílení koruny pod 27 CZK/EUR?",
+      "explain": [
+        "Inspirováno rokem 2013. Domácí poptávka slábne, eurozóna je v recesi (zahraniční poptávka −1,5 %) a ECB drží nízké sazby (−1 p. b.). Všechny tři šoky trvají 10 čtvrtletí. Bez zásahu (čárkovaně) narazí sazba [[TR]] na nulu, ceny klesají a koruna posiluje, protože vysoká reálná sazba a nízké zahraniční sazby táhnou kapitál do korun [[UIP]]. Silnější koruna dál zlevňuje dovoz [[CPI]] a dusí vývoz [[IS]].",
+        "<b>Kurzový závazek:</b> od 1. čtvrtletí banka nedovolí, aby koruna posílila pod zvolenou hranici, a brání ji intervencemi ξ (nákupy eur). Slabší koruna zdraží dovoz, takže spotřebitelská inflace [[CPI]] se vzdálí od deflace, a podpoří čistý vývoz [[IS]].",
+        "V racionálním režimu je nejsilnější kanál očekávání. Nominální kurz nemůže klesnout, takže pokud má koruna reálně posílit, musí růst domácí ceny. Lidé proto čekají vyšší inflaci a reálná sazba na nulové mezi klesá. Kurz je tady nástroj, který funguje i tehdy, když sazby už níž nejdou.",
+        "Banka v tomto scénáři reaguje na domácí inflaci (ω = 1), stejně jako ČNB přímý dopad slabší koruny na ceny tolerovala. Zkus ω = 0: pravidlo pak na dovozní inflaci odpoví zvýšením sazby a účinek závazku samo podkopá.",
+        "<b>Konec závazku:</b> trh ví, že po skončení koruna posílí, a těsně před koncem do ní proudí peníze. Intervence prudce rostou, stejně jako na jaře 2017. Po konci závazku koruna posílí, protože hranice ji držela slabší, než by odpovídalo rovnováze.",
+        "V hybridním režimu chybí kanál očekávání a závazek pomáhá jen mechanicky přes ceny dovozu a vývoz. Výkon podpoří málo a skok kurzu inflaci spíš rozkolísá, takže ztráta může vyjít i vyšší. Síla kurzového závazku tedy stojí hlavně na důvěryhodnosti a očekáváních."
+      ]
     }
   },
   "explain": {
@@ -273,16 +349,33 @@
         "<b>Měnový šok</b> v je odchylka od pravidla [[TR]]: banka nastaví sazbu výš, než by pravidlo velelo.",
         "Ceny jsou strnulé, takže vyšší nominální sazba znamená vyšší reálnou sazbu. Poptávka podle [[IS]] klesá a inflace podle [[NKPC]] klesá také.",
         "Pravidlo pak část zpřísnění samo vrací: nižší π a x stahují sazbu dolů. Při výchozí kalibraci proto nominální sazba dokonce <em>klesne</em>, zatímco reálná sazba roste. Politiku měří cesta reálné sazby, ne nominální."
+      ],
+      "istar": [
+        "<b>Zahraniční sazba</b> i* roste, například když ECB zpřísňuje. Při stejné české sazbě se vyplatí držet eura, investoři korunu prodávají a ta oslabuje. To popisuje nekrytá úroková parita [[UIP]]: reálný kurz se rovná součtu budoucích rozdílů reálných sazeb.",
+        "Slabší koruna zdraží dovoz, takže spotřebitelská inflace [[CPI]] roste, a zlevní český vývoz, takže poptávka [[IS]] krátkodobě dostane podporu.",
+        "Banka podle pravidla [[TR]] reaguje na vyšší inflaci zvýšením sazby, a tím část oslabení koruny vrací. Malá otevřená ekonomika tak dováží měnovou politiku ze zahraničí: když ECB zpřísní, musí trochu zpřísnit i ČNB."
+      ],
+      "ystar": [
+        "<b>Zahraniční poptávka</b> klesá, typicky při recesi v eurozóně. Přímo ubývá českého vývozu, takže mezera výstupu klesá [[IS]] a s ní i domácí inflace [[NKPC]].",
+        "Banka podle [[TR]] sazby sníží a koruna oslabí [[UIP]]. To pokles částečně tlumí: slabší koruna podpoří vývoz a zdraží dovoz, takže spotřebitelská inflace [[CPI]] klesá méně než domácí. V hybridním režimu může CPI na chvíli dokonce vzrůst.",
+        "Pružný kurz tu funguje jako automatický stabilizátor. Zkus γ = 0: zahraniční recese pak ekonomiku vůbec nezasáhne."
+      ],
+      "chi": [
+        "<b>Šok kurzu:</b> investoři náhle chtějí za držení korun vyšší výnos (riziková prémie χ), třeba kvůli nejistotě v regionu. Při stejných sazbách koruna okamžitě oslabí [[UIP]].",
+        "Dovoz zdraží a spotřebitelská inflace [[CPI]] vyskočí, i když domácí poptávka není přehřátá. Pro banku je to podobné nákladovému šoku: zvýšením sazby [[TR]] korunu podpoří a inflaci utlumí, ale za cenu nižší poptávky [[IS]].",
+        "Vyzkoušej ω = 1 v sekci Otevřená ekonomika: banka se pak dívá skrz přímý dopad kurzu na ceny a nechá dovozní inflaci odeznít sama."
       ]
     },
     "mode": {
       "hybrid": "<b>Hybridní režim:</b> očekávání se tvoří z minulosti [[E]]. Reakce jsou proto pomalejší a hrbovité (vrchol nastává až po několika čtvrtletích) a sliby o budoucnosti nepůsobí. Diskontování m se v tomto režimu neuplatní.",
-      "both": "<b>Srovnání režimů:</b> modrá = racionální očekávání, oranžová = hybridní. Rozdíl ukazuje, kolik práce v modelu dělají očekávání."
+      "both": "<b>Srovnání režimů:</b> modrá = racionální očekávání, oranžová = hybridní. Rozdíl ukazuje, kolik práce v modelu dělají očekávání.",
+      "open": "<b>Otevřená ekonomika:</b> sazba působí kromě poptávky [[IS]] i přes kurz koruny [[UIP]]. Vyšší sazba korunu posílí, dovoz zlevní a spotřebitelská inflace [[CPI]] klesne rychleji než v uzavřené ekonomice. Silnější koruna navíc tlumí čistý vývoz."
     },
     "note": {
       "bound": "Sazba je na dolní mezi ({lb} % p.a.) ve čtvrtletích {list} (stínování v grafu nominální sazby). Tam pravidlo [[TR]] neplatí a reálnou sazbu může snížit jen vyšší očekávaná inflace.",
       "delay": "Banka reaguje se zpožděním {n} čtv.: do té doby drží sazbu na neutrální úrovni bez ohledu na [[TR]].",
-      "discount": "Diskontování očekávání m = {m}: budoucí hodnoty v [[IS]] a [[NKPC]] jsou tlumené."
+      "discount": "Diskontování očekávání m = {m}: budoucí hodnoty v [[IS]] a [[NKPC]] jsou tlumené.",
+      "floor": "Koruna je na hranici závazku ({floor} CZK/EUR) ve čtvrtletích {list} (stínování v grafu kurzu). Tam banka intervenuje: kupuje eura, aby koruna nebyla silnější [[UIP]]."
     }
   },
   "tabs": {
@@ -316,7 +409,9 @@
     "blocks": {
       "IS": "Poptávka",
       "NKPC": "Inflace",
-      "TR": "Sazba"
+      "TR": "Sazba",
+      "UIP": "Kurz",
+      "NKPC_open": "Inflace (CPI)"
     },
     "calm": "Žádný člen teď nehraje velkou roli.",
     "driverUp": "Nejvíc ji teď zvyšuje {term} ({v}).",
@@ -324,13 +419,19 @@
     "bars": {
       "IS": "Mezera výstupu (IS)",
       "NKPC": "Inflace vůči cíli (NKPC)",
-      "TR": "Sazba vůči neutrální (TR)"
+      "TR": "Sazba vůči neutrální (TR)",
+      "UIP": "Reálný kurz (UIP)",
+      "NKPC_open": "Inflace CPI vůči cíli"
     },
     "totals": {
       "IS": "mezera výstupu",
       "NKPC": "inflace vůči cíli",
-      "TR": "sazba vůči neutrální"
-    }
+      "TR": "sazba vůči neutrální",
+      "UIP": "reálný kurz",
+      "NKPC_open": "CPI vůči cíli"
+    },
+    "introOpen": "V otevřené ekonomice přibývá uzel <b>Kurz koruny</b> [[UIP]]: sazba a očekávání ho posouvají, kurz pak působí na inflaci přes ceny dovozu [[CPI]] a na poptávku přes čistý vývoz (oblouk přes horní okraj) [[IS]]. Zahraniční šoky i*, χ a y* vstupují zvenčí.",
+    "ariaOpen": "Diagram vztahů mezi očekáváními, poptávkou, inflací, centrální bankou a kurzem koruny"
   },
   "decomp": {
     "terms": {
@@ -338,18 +439,37 @@
         "expX": "očekávaná poptávka",
         "expPi": "očekávaná inflace",
         "rate": "nominální sazba",
-        "natural": "přirozená sazba"
+        "natural": "přirozená sazba",
+        "fx": "čistý vývoz (kurz)",
+        "foreign": "zahraniční poptávka"
       },
       "NKPC": {
         "exp": "očekávaná inflace",
         "gap": "mezera výstupu",
-        "shock": "nákladový šok"
+        "shock": "nákladový šok",
+        "imported": "dovoz"
       },
       "TR": {
         "infl": "reakce na inflaci",
         "gap": "reakce na mezeru",
         "shock": "měnový šok",
         "bound": "dolní mez"
+      },
+      "IS_open": {
+        "expX": "očekávaná domácí poptávka"
+      },
+      "NKPC_open": {
+        "exp": "domácí: očekávání",
+        "gap": "domácí: mezera",
+        "shock": "domácí: nákladový šok"
+      },
+      "UIP": {
+        "expQ": "očekávaný kurz",
+        "expPi": "očekávaná inflace",
+        "rate": "domácí sazba",
+        "foreignRate": "zahraniční sazba",
+        "premium": "riziková prémie",
+        "intervention": "intervence ČNB"
       }
     },
     "override": {
@@ -359,7 +479,8 @@
     "units": {
       "IS": "% potenciálu",
       "NKPC": "p. b. p.a.",
-      "TR": "p. b. p.a."
+      "TR": "p. b. p.a.",
+      "UIP": "% (reálný kurz)"
     }
   },
   "diagram": {
@@ -368,14 +489,20 @@
       "demand": "Poptávka",
       "inflation": "Inflace",
       "bank": "Centrální banka",
-      "bankShort": "Banka"
+      "bankShort": "Banka",
+      "fx": "Kurz koruny",
+      "fxShort": "Kurz"
     },
     "nodeTips": {
       "exp_rational": "Očekávaná mezera a inflace v příštím čtvrtletí. V racionálním režimu se rovnají skutečným hodnotám příštího čtvrtletí.",
       "exp_hybrid": "Očekávaná mezera a inflace v příštím čtvrtletí. V hybridním režimu se tvoří z minulého čtvrtletí; w je důvěra v inflační cíl.",
       "demand": "Mezera výstupu x: poptávka vůči potenciálu (IS).",
       "inflation": "Inflace π v % p.a. (NKPC).",
-      "bank": "Nominální sazba i a reálná sazba i − Eπ v % p.a. (Taylorovo pravidlo s dolní mezí)."
+      "bank": "Nominální sazba i a reálná sazba i − Eπ v % p.a. (Taylorovo pravidlo s dolní mezí).",
+      "fx_rational": "Kurz koruny v CZK/EUR a reálný kurz q (kladný = slabší koruna). Racionální investoři znají budoucí cestu kurzu (UIP).",
+      "fx_hybrid": "Kurz koruny v CZK/EUR a reálný kurz q (kladný = slabší koruna). V hybridním režimu investoři čekají postupný návrat kurzu k rovnováze, E q = θ q.",
+      "demand_open": "Mezera výstupu x = domácí poptávka + čistý vývoz (IS).",
+      "inflation_open": "Spotřebitelská inflace (CPI) v % p.a. = domácí zboží + dovoz."
     },
     "arrows": {
       "expDemand": "m·E x + σ·E π: když lidé čekají vyšší poptávku, utrácejí už dnes; vyšší očekávaná inflace snižuje reálnou sazbu (IS).",
@@ -387,7 +514,19 @@
       "inflBank": "φπ·π: banka reaguje na inflaci (TR).",
       "demandBank": "φx·x: banka reaguje na mezeru výstupu (TR).",
       "shockBank": "v: měnový šok, odchylka banky od pravidla (TR).",
-      "limitBank": "Rozdíl mezi skutečnou sazbou a pravidlem: dolní mez (níž sazba nemůže), zpoždění reakce, slib (forward guidance), ve hře rozhodnutí hráče."
+      "limitBank": "Rozdíl mezi skutečnou sazbou a pravidlem: dolní mez (níž sazba nemůže), zpoždění reakce, slib (forward guidance), ve hře rozhodnutí hráče.",
+      "expDemand_open": "m·E c + σ·E πᴴ: očekávaná domácí poptávka a očekávaná inflace (snižuje reálnou sazbu) (IS).",
+      "expInfl_open": "(1 − α)·β·m·E πᴴ: očekávaná inflace v cenách domácího zboží (NKPC, CPI).",
+      "demandInfl_open": "(1 − α)·κ·x: vyšší poptávka zdražuje domácí zboží (NKPC, CPI).",
+      "shockInfl_open": "(1 − α)·u: nákladový šok v domácích cenách (NKPC, CPI).",
+      "expFx": "E q + E πᴴ: očekávaný budoucí kurz a očekávaná inflace, která snižuje domácí reálnou sazbu (UIP).",
+      "bankFx": "−i: vyšší domácí sazba přitahuje kapitál a korunu posiluje (UIP).",
+      "interveneFx": "ξ: intervence banky (nákupy eur), které drží korunu na hranici závazku (UIP).",
+      "fxInfl": "α·πᶠ: slabší koruna zdražuje dovoz a zvedá spotřebitelskou inflaci (CPI).",
+      "fxDemand": "δ·q: slabší koruna zlevňuje vývoz a zdražuje dovoz, čistý vývoz roste (IS).",
+      "foreignFx": "i*: vyšší zahraniční sazba odvádí kapitál a korunu oslabuje (UIP).",
+      "shockFx": "χ: riziková prémie, kterou investoři chtějí za držení korun (UIP).",
+      "foreignDemand": "γ·y*: zahraniční poptávka po českém vývozu (IS)."
     },
     "stubs": {
       "bound": "mez",
@@ -403,7 +542,8 @@
       "hybrid": "Hybridní očekávání: odhad budoucnosti se tvoří z minulého čtvrtletí."
     },
     "credibility": "důvěra",
-    "real": "reálná"
+    "real": "reálná",
+    "realFx": "reálný"
   },
   "game": {
     "title": "Hra Buď ČNB",
@@ -455,7 +595,11 @@
       "shocksUnit": "p. b. p.a.",
       "naturalDev": "přirozená sazba rⁿ (odchylka)",
       "cost": "nákladový šok u",
-      "histNote": "šedý pruh = historie před tvým nástupem"
+      "histNote": "šedý pruh = historie před tvým nástupem",
+      "fxSeen": "Kurz koruny (tržní, bez šumu)",
+      "fxMarket": "kurz",
+      "foreignDemand": "zahraniční poptávka y*",
+      "premium": "riziková prémie χ"
     },
     "neutral": "neutrální",
     "news": {
@@ -463,7 +607,11 @@
       "rn_down": "Firmy ruší investice a domácnosti začínají šetřit.",
       "u_up": "Ceny energií a surovin prudce rostou.",
       "u_down": "Ceny energií a surovin prudce klesají.",
-      "none": "Žádné zvláštní zprávy."
+      "none": "Žádné zvláštní zprávy.",
+      "ystar_up": "Eurozóna roste rychleji, než se čekalo, a poptávka po českém vývozu stoupá.",
+      "ystar_down": "Eurozóna zpomaluje a zahraniční odběratelé ruší objednávky.",
+      "chi_up": "Investoři utíkají z regionu a prodávají korunu.",
+      "chi_down": "Do koruny proudí zahraniční kapitál."
     },
     "newsTag": "Zprávy",
     "quarterOf": "Čtvrtletí {q} z {n}",
@@ -473,7 +621,8 @@
       "vsTarget": "({d} p. b. vůči cíli)",
       "gap": "Mezera výstupu",
       "expectations": "Inflační očekávání",
-      "lastRate": "Sazba minulé čtvrtletí"
+      "lastRate": "Sazba minulé čtvrtletí",
+      "fx": "Kurz koruny"
     },
     "setRate": "Sazba pro čtvrtletí {q}",
     "noChange": "beze změny",
@@ -556,6 +705,14 @@
       "deflation": "Vláda tě v {q} odvolala: inflace spadla na {v} % p.a. a ekonomika se propadá do deflace. Vyhodnocuje se jen odehraná část hry (z plánovaných {n} čtv.).",
       "boom": "Vláda tě v {q} odvolala: ekonomika se přehřála, mezera výstupu {v} %. Vyhodnocuje se jen odehraná část hry (z plánovaných {n} čtv.).",
       "slump": "Vláda tě v {q} odvolala: hluboká recese, mezera výstupu {v} %. Vyhodnocuje se jen odehraná část hry (z plánovaných {n} čtv.)."
-    }
+    },
+    "economyTip": "Uzavřená ekonomika jako ve fázi 2, nebo malá otevřená ekonomika s kurzem koruny [[UIP]]. V otevřené ekonomice sazba hýbe kurzem hned v témže čtvrtletí, kurz se pak postupně propisuje do cen dovozu [[CPI]] a do vývozu [[IS]]. Přibývají zahraniční šoky: poptávka v eurozóně, sazba ECB a nálady investorů vůči koruně. Kurz vidíš hned a přesně, protože jde o tržní cenu."
+  },
+  "economy": {
+    "label": "Ekonomika",
+    "closed": "Uzavřená",
+    "open": "Otevřená",
+    "openShort": "otevřená",
+    "tip": "<b>Uzavřená:</b> tříčlenný model z fáze 1, beze změny. <b>Otevřená:</b> malá otevřená ekonomika jako Česko. Přibývá kurz koruny (nekrytá úroková parita [[UIP]]), dovoz v koši spotřebitelských cen [[CPI]], čistý vývoz v poptávce [[IS]] a zahraniční šoky: zahraniční sazba, zahraniční poptávka a šok kurzu. Bez obchodu (α = δ = γ = 0) dává otevřený model přesně stejné výsledky jako uzavřený."
   }
 }
