@@ -381,7 +381,8 @@
   "tabs": {
     "aria": "Parts of the app",
     "lab": "Shock lab",
-    "game": "Be the central bank"
+    "game": "Be the central bank",
+    "agents": "Agents"
   },
   "timeline": {
     "play": "Play",
@@ -714,5 +715,129 @@
     "open": "Open",
     "openShort": "open",
     "tip": "<b>Closed:</b> the three-equation model of phase 1, unchanged. <b>Open:</b> a small open economy like Czechia. It adds the koruna exchange rate (uncovered interest parity [[UIP]]), imports in the consumer price basket [[CPI]], net exports in demand [[IS]] and foreign shocks: the foreign interest rate, foreign demand and an exchange-rate shock. Without trade (α = δ = γ = 0) the open model gives exactly the same results as the closed one."
+  },
+  "agents": {
+    "title": "An economy of agents: households, firms, a bank, the state",
+    "intro": [
+      "Here the economy is not made of equations but of individual agents who decide for themselves. Each dot is a household. Households are grouped around the firm they work for. The larger circles on the ring are firms, the commercial bank sits in the middle, the central bank above it and the state below. Lines are the payments of the quarter, their width matches the amount, and money travels along them.",
+      "Households spend, firms produce, buy inputs from their suppliers and pay wages, the state collects taxes and pays benefits, the bank lends and pays interest. Thousands of such decisions add up to aggregate demand [[IS]], inflation [[NKPC]] and the bank's response [[TR]]. The charts below compare them with the three-equation model."
+    ],
+    "qualitative": "<b>The match with the three-equation model is only qualitative.</b> Agents have different lags, different incomes and randomness, and the three-equation model is a rough simplification of them. Watch whether both economies move in the same direction for the same reasons, not whether the numbers agree.",
+    "worldTitle": "The world of agents",
+    "sections": {
+      "world": "Agents"
+    },
+    "params": {
+      "households": "Number of households",
+      "firms": "Number of firms",
+      "htmShare": "Living pay cheque to pay cheque",
+      "resetProb": "Firms changing their price per quarter",
+      "stabilizer": "Benefits for lost hours",
+      "seed": "Seed (agents' randomness)",
+      "policy": "The rate is set by",
+      "manualLevel": "Rate from quarter {q}"
+    },
+    "policy": {
+      "rule": "The rule",
+      "manual": "You"
+    },
+    "tips": {
+      "economy": "The open economy adds the Rest of the world: households spend part of their budget on imports [[CPI]], and firms export according to foreign demand and the koruna exchange rate [[UIP]].",
+      "households": "How many households the simulation contains. More households mean smoother aggregates and less randomness, but a denser picture.",
+      "firms": "How many firms sell goods. Each household shops in 3 favourite shops and works for one firm. Each firm buys inputs from 2 suppliers.",
+      "htmShare": "Households without savings spend the whole pay cheque they have just received and do not react to the interest rate directly (hand-to-mouth). The others smooth consumption according to their average income and the real rate [[IS]]. More households living pay cheque to pay cheque means a fall in income reaches spending faster, so shocks are amplified (Kaplan, Moll and Violante 2018).",
+      "resetProb": "Calvo: each quarter only this randomly chosen share of firms may change its price; the rest keep theirs. The fewer firms change prices, the more slowly inflation responds to costs and demand, so the Phillips curve is flatter [[NKPC]]. The default of 25% means a price lasts a year on average.",
+      "stabilizer": "Automatic stabilizer: the share of the wage for lost hours (when a firm cuts production) that the state replaces with a benefit. A higher share cushions falls in demand. The state borrows from the bank to pay it, and the fiscal rule then gradually repays the debt through lower transfers.",
+      "seed": "The same seed gives the same agents, the same links and the same randomness (shop popularity, which firms may change their price).",
+      "policy": "<b>The rule:</b> every quarter the central bank sets the rate by the Taylor rule [[TR]] from the agent economy's inflation and output gap. <b>You:</b> you set the rate with the slider, and the new rate applies from the quarter chosen on the timeline onwards. The three-equation model in the comparison uses the same rate path.",
+      "manualLevel": "Move the timeline to the quarter from which the new rate should apply, then set the rate. It also applies to all later quarters until you change it again."
+    },
+    "series": {
+      "abm": "agents (response to the shock)",
+      "nk": "three-equation model (hybrid, corresponding calibration)"
+    },
+    "matched": "Corresponding calibration: σ = {sigma} (only smoothing households respond to the rate), κ ≈ {kappa} (share of firms changing prices × wage response to the gap). The agents' response = the difference from the same economy without the shock, which filters out randomness.",
+    "legend": {
+      "spend": "spends more than it earns",
+      "neutral": "spends what it earns",
+      "save": "saves",
+      "htm": "lives pay cheque to pay cheque",
+      "priceUp": "firm raised its price",
+      "priceDown": "firm cut its price",
+      "width": "Line width matches the amount. Payments to the bank, the state and abroad are summed over the household group of one firm. The size of a firm's circle matches its output.",
+      "toggles": "Which flows to show",
+      "hoverHint": "Click a kind of flow to hide or show it. Hovering over a household or a firm highlights only its payments."
+    },
+    "flows": {
+      "cons": "household purchases",
+      "wage": "wages",
+      "input": "deliveries between firms",
+      "tax": "taxes",
+      "benefit": "benefits and transfers",
+      "interest": "interest",
+      "dividend": "dividends (profits to owners)",
+      "trade": "imports and exports"
+    },
+    "explain": [
+      "<b>Households.</b> Those living pay cheque to pay cheque spend the whole fresh pay cheque. The others follow the Euler equation: they keep their consumption, cut it every quarter the real rate is above neutral (by σ% per percentage point), move it slowly towards their average income and watch the buffer on their account. That is a micro version of the [[IS]] equation.",
+      "<b>Firms.</b> They produce what sells and need their employees' labour and inputs from their suppliers to do so. Only a randomly chosen share of them may change their price (Calvo). A firm that changes its price sets it as a markup over costs, allowing for the inflation it expects before it can change the price again. Wages grow with expected inflation and with labour-market tightness (the output gap), so an overheated economy raises costs. That is where the Phillips curve [[NKPC]] comes from.",
+      "<b>The bank, the central bank and the state.</b> The central bank sets the rate by the rule [[TR]] and the commercial bank pays and charges interest accordingly. Firms borrow to pay wages (working-capital loans), households hold deposits. The state taxes wages and pays transfers and benefits for lost hours. The profits of firms and of the bank go to their owners, the smoothing households, as dividends. Every payment moves money from one account to another, so the total amount of money never changes (check in the table on the right).",
+      "<b>Expectations</b> are hybrid as in [[E]]: people expect inflation from past inflation and trust in the target. That is why the comparison three-equation model is hybrid."
+    ],
+    "shockExplain": {
+      "rn": "<b>Demand shock:</b> smoothing households want to save more (the natural rate rⁿ falls) [[IS]]. They spend less, firms sell less and cut hours, so wages fall. Households living pay cheque to pay cheque then spend less the next quarter too. The fall spreads through the whole network of payments.",
+      "u": "<b>Cost-push shock:</b> firms that are changing their price add a higher markup (for example because of dearer energy) [[NKPC]]. Prices rise gradually as more firms get to change theirs. The central bank raises the rate [[TR]], smoothing households cut spending and output falls.",
+      "v": "<b>Monetary shock:</b> the central bank raises the rate above the rule [[TR]]. The higher real rate makes smoothing households spend less [[IS]]; firms then pay for fewer hours and wages grow more slowly, and so do prices [[NKPC]].",
+      "istar": "<b>Foreign rate:</b> higher interest rates abroad weaken the koruna [[UIP]]. Imports get dearer [[CPI]] and firms' exports grow.",
+      "ystar": "<b>Foreign demand:</b> foreign customers buy less, so exporters sell less, cut hours and pay lower wages. The fall then spreads to domestic purchases [[IS]].",
+      "chi": "<b>Exchange-rate shock:</b> investors want a higher premium for the koruna and it weakens [[UIP]]. Imports get dearer [[CPI]], exports cheaper, and firms export more."
+    },
+    "manualNote": "You set the rate: each quarter uses the slider value set in that or an earlier quarter. The three-equation model in the comparison uses the same rate path.",
+    "flowsTitle": "Money in the economy",
+    "table": {
+      "flow": "Flow",
+      "total": "Total",
+      "perHousehold": "Per household"
+    },
+    "flowsRows": {
+      "cons": "Household purchases",
+      "wage": "Wages",
+      "input": "Deliveries between firms",
+      "tax": "Taxes",
+      "benefit": "Benefits and transfers",
+      "interest": "Interest paid to the bank",
+      "dividend": "Dividends",
+      "imports": "Imports",
+      "exports": "Exports"
+    },
+    "stocks": {
+      "deposits": "Household deposits {v}, firm loans {d}",
+      "state": "State account {v} (negative = debt to the bank)",
+      "money": "Sum of all accounts {v} (at the start {s}): payments only move money",
+      "resets": "{v}% of firms changed their price (set to {p}%)",
+      "htm": "Households living pay cheque to pay cheque make {v}% of spending"
+    },
+    "unitsNote": "Money is in units where the steady-state price of goods is 1 and a household earns about 1 per quarter. The charts show levels as in the lab (inflation and rates in % p.a.).",
+    "hover": {
+      "firm": "Firm {n}",
+      "price": "Price {v} (change this quarter: {d})",
+      "output": "Output {v}, employees {n}, hours {h}% of normal",
+      "balance": "Account {v} (negative = loan)",
+      "exports": "Exports {v}",
+      "htm": "Household {n}, pay cheque to pay cheque, works at firm {f}",
+      "smoother": "Household {n}, smooths consumption, works at firm {f}",
+      "income": "Wage {w}, tax {tx}, benefits {b}, dividends {d}",
+      "spend": "Spending {v} (saving {s}% of income)",
+      "deposits": "On the account {v}"
+    },
+    "nodes": {
+      "bank": "Bank",
+      "cb": "Central bank",
+      "state": "State",
+      "abroad": "Abroad",
+      "cbInfo": "rate {v}%",
+      "stateInfo": "taxes − benefits {v}",
+      "abroadInfo": "net exports {v}"
+    }
   }
 }

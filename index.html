@@ -22,6 +22,7 @@
   <nav class="tabs" role="tablist" data-i18n-aria="tabs.aria">
     <button type="button" role="tab" id="tab-lab" data-tab="lab" aria-controls="view-lab" aria-selected="true" data-i18n="tabs.lab"></button>
     <button type="button" role="tab" id="tab-game" data-tab="game" aria-controls="view-game" aria-selected="false" data-i18n="tabs.game"></button>
+    <button type="button" role="tab" id="tab-agents" data-tab="agents" aria-controls="view-agents" aria-selected="false" data-i18n="tabs.agents"></button>
   </nav>
 
   <main class="layout" id="view-lab" role="tabpanel" aria-labelledby="tab-lab">
@@ -64,6 +65,8 @@
   </main>
 
   <main class="game-view" id="view-game" role="tabpanel" aria-labelledby="tab-game" hidden></main>
+
+  <main class="layout agents-view" id="view-agents" role="tabpanel" aria-labelledby="tab-agents" hidden></main>
 
   <footer class="foot">
     <span>Model: Woodford (2003), <em>Interest and Prices</em>; Hall (1988); Gabaix (2020).</span>

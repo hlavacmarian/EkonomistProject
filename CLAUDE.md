@@ -3,7 +3,7 @@
 Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Woodford, *Interest and Prices*; Hall & Woodford, Nobel 2026). Hlavní účel je, aby autor model do hloubky pochopil: jak spolu souvisí poptávka, inflace, sazby a očekávání. Vedlejší účel je hra „Buď ČNB“.
 
 - Repozitář: https://github.com/hlavacmarian/EkonomistProject (veřejný), větev `main`. Lokální kopie je v `C:\Users\Marian\Desktop\nk-lab`.
-- **Stav: fáze 1 (laboratoř šoků), 2 (živý diagram + hra Buď ČNB) a 3 (malá otevřená ekonomika) jsou hotové.** Fáze 2 a 3 jsou na větvi `claude/funny-sagan-giyc11` (zatím nesloučené do `main`). Další na řadě je **fáze 4** (rozhodnutí uživatele k ní jsou níže).
+- **Stav: všechny 4 fáze jsou hotové** (laboratoř šoků, živý diagram + hra Buď ČNB, malá otevřená ekonomika, agentní simulace). Fáze 2–4 jsou na větvi `claude/funny-sagan-giyc11` (zatím nesloučené do `main`). Další kroky určí uživatel.
 - Postup je dohodnutý ve 4 fázích. **Po každé fázi se zastav, shrň, co je hotové a jak jsi to ověřil, a počkej na pokyn.**
 - S uživatelem komunikuj česky. Kód a komentáře piš anglicky.
 - Commit nebo push dělej jen na požádání. Commity končí řádkem `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
@@ -12,7 +12,7 @@ Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Wo
 
 ```bash
 npm start   # statický server bez závislostí, http://localhost:5173/ (PORT=… mění port)
-npm test    # node --test, aktuálně 145 testů, všechny procházejí
+npm test    # node --test, aktuálně 160 testů, všechny procházejí
 ```
 
 - Čisté ES moduly, žádný build a **žádné závislosti**, Node ≥ 18. Tak to drž. Pokud bude nějaká knihovna opravdu nutná (např. WebGL ve fázi 4), načítej ji z CDN s přesnou verzí, ale nejdřív zvaž canvas 2D.
@@ -51,6 +51,8 @@ src/game/             hra bez DOM: rng.js (mulberry32, gaussian), game.js (creat
                       isOver, drawGame, FIRE, FOREIGN_PROCESS), evaluate.js (lossBreakdown, autopilotSolution,
                       dataRuleSolution, analyze, evaluateGame, RULES, LOSS_WEIGHTS), economy.js (gameModel: krok /
                       start / cesta pro uzavřenou i otevřenou ekonomiku), index.js
+src/abm/model.js      agentní ekonomika bez DOM: buildWorld, stepWorld, runABM (burn-in + běh bez šoku, mezipaměť),
+                      abmLevels (raw a response = rozdíl proti běhu bez šoku), matchedParams, totalMoney
 src/scenarios.js      SCENARIOS (custom, oil, pandemic, zlb, deanchor, koruna), buildRuns(built, mode)
 src/ui/app.js         záložky (#lab / #game), stav, ovládání, časová osa, živý panel, připínání, vysvětlení
 src/ui/chart.js       SVG čárový graf: createChart(el,{title,unit,onHover}) → update/setCursor/setTitle;
@@ -60,10 +62,12 @@ src/ui/diagram.js     živý kauzální diagram (SVG, kompaktní rozložení pod
 src/ui/live.js        panel: diagram + rozklad v číslech + 3 sloupcové grafy; update({result, params, runs, context})
 src/ui/timeline.js    přehrát/krokovat/posuvník; createTimeline(el,{onChange,label,texts})
 src/ui/game.js        obrazovky hry: nastavení, tah, vyhodnocení (grafy, rozbor, živý diagram)
+src/ui/agents.js      záložka Agenti (#agents): ovládání, časová osa, grafy agenti vs. tříčlenný model, toky peněz
+src/ui/agentsCanvas.js canvas 2D: tečky, platby s tloušťkou podle částky, putující peníze, záblesky cen, zvýraznění
 src/ui/i18n.js        loadLocale, t(key, vars), fmt(v, digits) (desetinná čárka v cs), eqRefs, applyStatic
 src/ui/styles.css     barvy jako CSS proměnné (světlý i tmavý motiv), --s1 racionální/hráč, --s2 hybridní,
                       --up/--down šipky, --c-* členy rozkladu
-test/                 model.test.js, decompose.test.js, open.test.js, game.test.js, i18n.test.js
+test/                 model.test.js, decompose.test.js, open.test.js, game.test.js, abm.test.js, i18n.test.js
 ```
 
 ### Model a konvence jednotek
@@ -125,6 +129,16 @@ Hra Buď ČNB:
 - Diagram: `layout(W, open)`, uzel kurzu vpravo nahoře, čistý vývoz jako vedená šipka (`type: 'route'`) přes horní okraj, v úzkém otevřeném rozložení mají vstupy jen názvy. Živý panel má v otevřeném režimu 4 sloupcové grafy (IS, CPI, UIP, TR).
 - Hra: `config.economy`. Zahraniční šoky jdou ze samostatného proudu RNG (`seed ^ 0x5bd1e995`), takže domácí šoky i uzavřené hry jsou bitově stejné jako ve fázi 2 (ověřeno). Kurz hráč vidí přesně a hned. Pravidla rozboru jsou stejná.
 - Ověřeno: `npm test` (145), Playwright 1400 i 375 px bez vodorovného posuvníku, CZ i EN, světlý i tmavý motiv, konzole bez chyb, scénář 5, celá hra v otevřené ekonomice.
+
+## Fáze 4: co je hotové a jak (pro navazování)
+
+- **Agenti** (`src/abm/model.js`, popis i rovnice v README): domácnosti od výplaty k výplatě (utratí čerstvou výplatu) a vyhlazovači (Eulerova rovnice v úrovni spotřeby s tahem k průměrnému příjmu a k rezervě na účtu), firmy s Calvo cenami (přirážka k nákladům indexovaná očekávanou inflací za dobu platnosti ceny), mzdy podle očekávané inflace a minulé mezery (ζ = 0,4, takže κ ≈ θζ = 0,1), dodavatelská síť (Leontief), banka (úvěry +2 p. b., vklady −0,5 p. b.), stát (daň 25 %, transfery, dávky za chybějící hodiny, fiskální pravidlo s integrální složkou), zahraničí (dovoz α, vývoz podle y* a reálného kurzu, UIP jako v hybridním otevřeném modelu), ČNB (pravidlo řešené bisekcí současně s poptávkou, nebo ruční sazba).
+- **Účetnictví:** každá platba odepíše z jednoho účtu a připíše na druhý, součet všech účtů je konstantní (test). Výchozí ustálený stav se kalibruje iterací (`calibrateSteadyState`), pak 60 čtvrtletí burn-in. RNG je objekt `{a}` (klonovatelný přes `structuredClone`), takže zahřátý svět i běh bez šoku jdou do mezipaměti.
+- **Kalibrační lekce:** (1) výplata dividend musí být „zisk + podíl odchylky hotovosti“, jinak banka ztrácí marži a ekonomika ujíždí; (2) dávky za chybějící hodiny jsou nesymetrické, takže bez integrálního fiskálního pravidla vzniká strukturální deficit a inflace nad cílem; (3) spotřeba vyhlazovačů musí reagovat na sazbu kumulativně (Euler), jinak má sazba malou trakci a ekonomika exploduje.
+- **Srovnání:** hybridní tříčlenný model s `matchedParams` (σ·(1 − podíl HtM), κ = θζ). Odezva agentů = běh se šokem − běh bez šoku (stejná náhoda). Shoda je kvalitativní, v UI to stojí výslovně.
+- **UI:** záložka Agenti, plátno (domácnosti seskupené u zaměstnavatele, firmy na prstenci, banka uprostřed), druhy toků vypínatelné v legendě, najetí zvýrazní platby jednoho agenta, časová osa sdílená s grafy, ruční řízení sazby („Ty“).
+- **Ověřeno:** `npm test` (160), Playwright 1400 i 375 px bez vodorovného posuvníku, CZ i EN, světlý i tmavý motiv, konzole bez chyb, tooltip, ruční sazba, otevřená ekonomika.
+- **Možná vylepšení:** průměrování odezvy přes více seedů (méně zubatá inflace), animovaný přechod mezi čtvrtletími, nezaměstnanost místo zkracování hodin.
 
 ## Fáze 4: rozhodnutí uživatele (listopad 2026)
 

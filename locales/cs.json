@@ -381,7 +381,8 @@
   "tabs": {
     "aria": "Části aplikace",
     "lab": "Laboratoř šoků",
-    "game": "Hra Buď ČNB"
+    "game": "Hra Buď ČNB",
+    "agents": "Agenti"
   },
   "timeline": {
     "play": "Přehrát",
@@ -714,5 +715,129 @@
     "open": "Otevřená",
     "openShort": "otevřená",
     "tip": "<b>Uzavřená:</b> tříčlenný model z fáze 1, beze změny. <b>Otevřená:</b> malá otevřená ekonomika jako Česko. Přibývá kurz koruny (nekrytá úroková parita [[UIP]]), dovoz v koši spotřebitelských cen [[CPI]], čistý vývoz v poptávce [[IS]] a zahraniční šoky: zahraniční sazba, zahraniční poptávka a šok kurzu. Bez obchodu (α = δ = γ = 0) dává otevřený model přesně stejné výsledky jako uzavřený."
+  },
+  "agents": {
+    "title": "Ekonomika z agentů: domácnosti, firmy, banka, stát",
+    "intro": [
+      "Tady se ekonomika neskládá z rovnic, ale z jednotlivých subjektů, které se samy rozhodují. Každá tečka je domácnost. Domácnosti jsou seskupené kolem firmy, kde pracují. Větší kruhy na prstenci jsou firmy, uprostřed je komerční banka, nad ní ČNB a pod ní stát. Čáry jsou platby v daném čtvrtletí, jejich tloušťka odpovídá částce a po čarách putují peníze.",
+      "Domácnosti utrácejí, firmy vyrábějí, nakupují vstupy od svých dodavatelů a platí mzdy, stát vybírá daně a vyplácí dávky, banka půjčuje a platí úroky. Z tisíců takových rozhodnutí vzniká celková poptávka [[IS]], inflace [[NKPC]] a reakce banky [[TR]]. Grafy dole je srovnávají s tříčlenným modelem."
+    ],
+    "qualitative": "<b>Shoda s tříčlenným modelem je jen kvalitativní.</b> Agenti mají jiné zpoždění, rozdílné příjmy i náhodu a tříčlenný model je jejich hrubé zjednodušení. Sledujte, zda se obě ekonomiky hýbou stejným směrem a ze stejných důvodů, ne zda sedí čísla.",
+    "worldTitle": "Svět agentů",
+    "sections": {
+      "world": "Agenti"
+    },
+    "params": {
+      "households": "Počet domácností",
+      "firms": "Počet firem",
+      "htmShare": "Žijí od výplaty k výplatě",
+      "resetProb": "Firmy měnící cenu za čtvrtletí",
+      "stabilizer": "Dávky za chybějící hodiny",
+      "seed": "Seed (náhoda agentů)",
+      "policy": "Sazbu určuje",
+      "manualLevel": "Sazba od čtvrtletí {q}"
+    },
+    "policy": {
+      "rule": "Pravidlo",
+      "manual": "Ty"
+    },
+    "tips": {
+      "economy": "V otevřené ekonomice přibývá uzel Zahraničí: domácnosti část útraty platí za dovoz [[CPI]], firmy vyvážejí podle zahraniční poptávky a kurzu koruny [[UIP]].",
+      "households": "Kolik domácností simulace obsahuje. Víc domácností znamená hladší agregáty a méně náhody, ale hustší obrázek.",
+      "firms": "Kolik firem prodává zboží. Každá domácnost nakupuje ve 3 oblíbených obchodech a pracuje pro jednu firmu. Každá firma kupuje vstupy od 2 dodavatelů.",
+      "htmShare": "Domácnosti bez úspor utratí celou výplatu, kterou právě dostaly, a na úrokovou sazbu přímo nereagují (hand-to-mouth). Ostatní vyhlazují spotřebu podle průměrného příjmu a reálné sazby [[IS]]. Víc lidí žijících od výplaty k výplatě znamená, že pokles příjmů se rychleji přenese do útrat a šoky se zesilují (Kaplan, Moll a Violante 2018).",
+      "resetProb": "Calvo: každé čtvrtletí smí cenu změnit jen tato část firem, vybraná náhodně. Ostatní ji drží. Čím méně firem cenu mění, tím pomaleji inflace reaguje na náklady a poptávku, takže Phillipsova křivka je plošší [[NKPC]]. Výchozích 25 % znamená, že cena vydrží v průměru rok.",
+      "stabilizer": "Automatický stabilizátor: jakou část mzdy za chybějící hodiny (když firma omezí výrobu) stát nahradí dávkou. Vyšší podíl tlumí propady poptávky. Stát se přitom zadluží u banky a fiskální pravidlo pak dluh postupně splácí nižšími transfery.",
+      "seed": "Stejný seed dá stejné agenty, stejné vazby i stejnou náhodu (oblíbenost obchodů, kdo smí měnit cenu).",
+      "policy": "<b>Pravidlo:</b> ČNB každé čtvrtletí nastaví sazbu podle Taylorova pravidla [[TR]] z inflace a mezery výstupu agentní ekonomiky. <b>Ty:</b> sazbu řídíš posuvníkem a nová sazba platí od zvoleného čtvrtletí na časové ose dál. Tříčlenný model ve srovnání použije stejnou cestu sazby.",
+      "manualLevel": "Posuň časovou osu na čtvrtletí, od kterého má nová sazba platit, a pak nastav sazbu. Platí i pro všechna další čtvrtletí, dokud ji znovu nezměníš."
+    },
+    "series": {
+      "abm": "agenti (odezva na šok)",
+      "nk": "tříčlenný model (hybridní, odpovídající kalibrace)"
+    },
+    "matched": "Odpovídající kalibrace: σ = {sigma} (na sazbu reagují jen vyhlazující domácnosti), κ ≈ {kappa} (podíl firem měnících cenu × reakce mezd na mezeru). Odezva agentů = rozdíl proti stejné ekonomice bez šoku, který odfiltruje náhodu.",
+    "legend": {
+      "spend": "utrácí víc, než vydělá",
+      "neutral": "utrácí, co vydělá",
+      "save": "spoří",
+      "htm": "žije od výplaty k výplatě",
+      "priceUp": "firma zdražila",
+      "priceDown": "firma zlevnila",
+      "width": "Tloušťka čáry odpovídá částce. Platby bance, státu a zahraničí jsou sečtené za skupinu domácností jedné firmy. Velikost kruhu firmy odpovídá její výrobě.",
+      "toggles": "Které toky ukázat",
+      "hoverHint": "Kliknutím na druh toku ho skryješ nebo ukážeš. Najetí myší na domácnost nebo firmu zvýrazní jen její platby."
+    },
+    "flows": {
+      "cons": "nákupy domácností",
+      "wage": "mzdy",
+      "input": "dodávky mezi firmami",
+      "tax": "daně",
+      "benefit": "dávky a transfery",
+      "interest": "úroky",
+      "dividend": "dividendy (zisky vlastníkům)",
+      "trade": "dovoz a vývoz"
+    },
+    "explain": [
+      "<b>Domácnosti.</b> Kdo žije od výplaty k výplatě, utratí celou čerstvou výplatu. Ostatní se řídí Eulerovou rovnicí: drží svou spotřebu, při reálné sazbě nad neutrální ji každé čtvrtletí snižují (o σ % na každý procentní bod), pomalu ji přibližují průměrnému příjmu a hlídají si rezervu na účtu. To je mikroverze rovnice [[IS]].",
+      "<b>Firmy.</b> Vyrábějí, co se prodá, a na výrobu potřebují práci svých zaměstnanců a vstupy od dodavatelů. Cenu smí změnit jen náhodně vybraná část z nich (Calvo). Firma, která cenu mění, ji nastaví jako přirážku k nákladům a počítá i s inflací, kterou čeká, než bude moct cenu změnit znovu. Mzdy rostou s očekávanou inflací a s napětím na trhu práce (mezerou výstupu), takže přehřátá ekonomika zdražuje náklady. Z toho vzniká Phillipsova křivka [[NKPC]].",
+      "<b>Banka, ČNB a stát.</b> ČNB nastavuje sazbu podle pravidla [[TR]] a komerční banka podle ní úročí vklady a úvěry. Firmy si půjčují na mzdy (provozní úvěr), domácnosti mají vklady. Stát vybírá daně ze mzdy a vyplácí transfery a dávky za chybějící hodiny. Zisky firem a banky dostanou jako dividendy vlastníci, tedy vyhlazující domácnosti. Každá platba přesune peníze z jednoho účtu na druhý, takže součet peněz se nemění (kontrola v tabulce vpravo).",
+      "<b>Očekávání</b> jsou hybridní jako v [[E]]: inflaci lidé čekají podle minulé inflace a důvěry v cíl. Proto je srovnávací tříčlenný model hybridní."
+    ],
+    "shockExplain": {
+      "rn": "<b>Poptávkový šok:</b> vyhlazující domácnosti chtějí víc spořit (přirozená sazba rⁿ klesá) [[IS]]. Utrácejí méně, firmy prodávají méně a zkracují hodiny, takže mzdy klesají. Domácnosti žijící od výplaty k výplatě pak utrácejí méně i v dalším čtvrtletí. Pokles se tak šíří celou sítí plateb.",
+      "u": "<b>Nákladový šok:</b> firmy, které právě mění cenu, přidávají vyšší přirážku (třeba kvůli dražší energii) [[NKPC]]. Ceny rostou postupně, jak se k cenám dostávají další firmy. ČNB zvedá sazbu [[TR]], vyhlazující domácnosti omezí útraty a výroba klesá.",
+      "v": "<b>Měnový šok:</b> ČNB zvedne sazbu nad pravidlo [[TR]]. Vyšší reálná sazba přiměje vyhlazující domácnosti utrácet méně [[IS]], firmy pak platí méně hodin a mzdy rostou pomaleji, takže i ceny [[NKPC]].",
+      "istar": "<b>Zahraniční sazba:</b> vyšší úroky v zahraničí oslabí korunu [[UIP]]. Dovoz zdraží [[CPI]] a vývoz firem roste.",
+      "ystar": "<b>Zahraniční poptávka:</b> zahraniční odběratelé kupují méně, takže vývozci prodávají méně, zkracují hodiny a platí nižší mzdy. Propad se pak šíří do domácích nákupů [[IS]].",
+      "chi": "<b>Šok kurzu:</b> investoři chtějí za korunu vyšší prémii a koruna oslabí [[UIP]]. Dovoz zdraží [[CPI]], vývoz se zlevní a firmy vyvážejí víc."
+    },
+    "manualNote": "Sazbu řídíš ty: pro každé čtvrtletí platí hodnota z posuvníku nastavená v tom nebo dřívějším čtvrtletí. Tříčlenný model ve srovnání používá stejnou cestu sazby.",
+    "flowsTitle": "Peníze v ekonomice",
+    "table": {
+      "flow": "Tok",
+      "total": "Celkem",
+      "perHousehold": "Na domácnost"
+    },
+    "flowsRows": {
+      "cons": "Nákupy domácností",
+      "wage": "Mzdy",
+      "input": "Dodávky mezi firmami",
+      "tax": "Daně",
+      "benefit": "Dávky a transfery",
+      "interest": "Úroky placené bance",
+      "dividend": "Dividendy",
+      "imports": "Dovoz",
+      "exports": "Vývoz"
+    },
+    "stocks": {
+      "deposits": "Vklady domácností {v}, úvěry firem {d}",
+      "state": "Účet státu {v} (záporný = dluh u banky)",
+      "money": "Součet všech účtů {v} (na začátku {s}): platby peníze jen přesouvají",
+      "resets": "Cenu změnilo {v} % firem (nastaveno {p} %)",
+      "htm": "Domácnosti od výplaty k výplatě tvoří {v} % útrat"
+    },
+    "unitsNote": "Peníze jsou v jednotkách, kde cena zboží v ustáleném stavu je 1 a domácnost vydělá zhruba 1 za čtvrtletí. Grafy ukazují úrovně jako v laboratoři (inflace a sazby v % p.a.).",
+    "hover": {
+      "firm": "Firma {n}",
+      "price": "Cena {v} (změna v tomto čtvrtletí: {d})",
+      "output": "Výroba {v}, zaměstnanců {n}, hodiny {h} % normálu",
+      "balance": "Účet {v} (záporný = úvěr)",
+      "exports": "Vývoz {v}",
+      "htm": "Domácnost {n}, od výplaty k výplatě, pracuje ve firmě {f}",
+      "smoother": "Domácnost {n}, vyhlazuje spotřebu, pracuje ve firmě {f}",
+      "income": "Mzda {w}, daň {tx}, dávky {b}, dividendy {d}",
+      "spend": "Útrata {v} (úspora {s} % příjmu)",
+      "deposits": "Na účtu {v}"
+    },
+    "nodes": {
+      "bank": "Banka",
+      "cb": "ČNB",
+      "state": "Stát",
+      "abroad": "Zahraničí",
+      "cbInfo": "sazba {v} %",
+      "stateInfo": "daně − dávky {v}",
+      "abroadInfo": "čistý vývoz {v}"
+    }
   }
 }

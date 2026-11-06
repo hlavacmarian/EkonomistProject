@@ -4,7 +4,7 @@ Interaktivní výuková simulace tříčlenného novokeynesiánského modelu (Wo
 
 > **Výukový model s učebnicovou kalibrací, ne předpověď.** Čísla ilustrují mechanismy a nepopisují českou ani jinou skutečnou ekonomiku.
 
-Stav: **Fáze 1 (laboratoř šoků), fáze 2 (živý diagram a hra „Buď ČNB“) a fáze 3 (malá otevřená ekonomika s kurzem koruny).** Fáze 4 (agentní simulace) zatím chybí.
+Stav: **hotové všechny 4 fáze:** laboratoř šoků, živý diagram a hra „Buď ČNB“, malá otevřená ekonomika s kurzem koruny a agentní simulace (záložka Agenti).
 
 ## Spuštění
 
@@ -45,9 +45,11 @@ src/game/             logika hry „Buď ČNB“: bez DOM, pokrytá testy
   game.js             šoky, šum v datech, pozorování se zpožděním, tah hráče, odvolání
   evaluate.js         ztrátová funkce, autopilot, pravidlo na datech hráče, pravidlový rozbor chyb
   economy.js          hra nad uzavřenou nebo otevřenou ekonomikou (stejné rozhraní krok / start / cesta)
+src/abm/model.js      agentní ekonomika: domácnosti, firmy, banka, stát, zahraničí, ČNB; platby, srovnání s modelem
 src/scenarios.js      připravené scénáře (čistá data, testované)
 src/ui/               vykreslování: app.js, chart.js a bars.js (vlastní SVG grafy), diagram.js,
-                      live.js (diagram + rozklad), timeline.js, game.js (obrazovky hry), i18n.js, styles.css
+                      live.js (diagram + rozklad), timeline.js, game.js (obrazovky hry), agents.js a
+                      agentsCanvas.js (záložka Agenti, kreslení na canvas), i18n.js, styles.css
 locales/cs.json, en.json  všechny texty rozhraní (výchozí čeština)
 test/                 unit testy (node:test)
 scripts/serve.mjs     minimální statický server bez závislostí
@@ -167,9 +169,43 @@ Přepínač **Uzavřená / Otevřená** je v laboratoři i ve hře. Uzavřený m
 - **Scénář 5, kurzový závazek ČNB (2013–2017):** domácí propad poptávky (−2 p. b.), recese v eurozóně (y\* −1,5 %) a nízké sazby ECB (i\* −1 p. b.) na 10 čtvrtletí. Banka se dívá skrz dovozní inflaci (ω = 1) a od 1. čtvrtletí po dobu 12 čtvrtletí nedovolí posílení koruny pod 27 CZK/EUR. V racionálním režimu závazek odvrátí deflaci (bez něj CPI −5 %, se závazkem kolem cíle) a ztrátu sníží zhruba čtyřikrát, hlavně přes očekávání vyšší inflace na nulové mezi. Těsně před koncem závazku prudce rostou intervence, protože trh čeká posílení. V hybridním režimu bez kanálu očekávání závazek pomáhá málo. Přepnutí na ω = 0 ukazuje, jak by banka reagující na CPI závazek sama podkopala.
 - **Hra v otevřené ekonomice:** stejná pravidla, navíc zahraniční šoky ze samostatného proudu téhož seedu, takže domácí šoky jsou stejné jako v uzavřené hře. Zahraniční sazba: AR(1), ρ = 0,9, σ = 0,15. Zahraniční poptávka: ρ = 0,8, σ = 0,4, události 5 %, ±3σ, častěji dolů. Prémie: ρ = 0,7, σ = 0,7, události 5 %, ±3,5σ, častěji oslabení. Kurz hráč vidí přesně a hned, protože jde o tržní cenu, ostatní data jako dřív. Vyhodnocení přidává graf kurzu, zahraniční šoky a diagram s kurzem.
 
+## Agentní simulace (fáze 4)
+
+Záložka **Agenti** staví ekonomiku zdola z jednotlivých subjektů, které se samy rozhodují (`src/abm/model.js`, bez DOM). Výchozí je 600 domácností a 40 firem, nastavit lze 200–2000 domácností a 10–80 firem. Dál jsou tu komerční banka, stát, ČNB a v otevřené ekonomice zahraničí. Každá domácnost pracuje pro jednu firmu a nakupuje ve 3 oblíbených obchodech. Každá firma kupuje vstupy od 2 dodavatelů, takže vzniká dodavatelská síť.
+
+Jedno čtvrtletí:
+
+1. **Mzdy** rostou s očekávanou inflací a s mezerou výstupu z minulého čtvrtletí (napětí na trhu práce): W<sub>t</sub> = W<sub>t−1</sub>(1 + (E π + ζ x<sub>t−1</sub>)/100), ζ = 0,4.
+2. **Ceny (Calvo):** každá firma smí změnit cenu s pravděpodobností θ (výchozí 25 %). Nová cena je přirážka 20 % k mezním nákladům (mzda a vstupy od dodavatelů), zvýšená o očekávanou inflaci za průměrnou dobu platnosti ceny a mírně posunutá podle nedávné poptávky. Nákladový šok u zvýší přirážku firem, které právě mění cenu. Oblíbenost firem kolísá náhodně (AR(1)), takže firmy zdražují i zlevňují i bez šoků.
+3. **Domácnosti:**
+   - *Od výplaty k výplatě* (výchozí 20 %) utratí celou výplatu, kterou právě dostaly.
+   - *Ostatní* se řídí Eulerovou rovnicí: c<sub>t</sub> = c<sub>t−1</sub>(1 − σ(g<sub>t</sub> − rⁿ<sub>t</sub>)/100) + 0,25(ȳ − c<sub>t−1</sub>) + 0,08(vklad − rezerva). Tady g je reálná sazba nad neutrální a ȳ průměrný příjem (adaptivní).
+   - Útrata se dělí mezi obchody podle ceny a oblíbenosti (CES, ε = 4). V otevřené ekonomice jde podíl α na dovoz.
+4. **ČNB:** Taylorovo pravidlo na CPI inflaci a mezeru výstupu (podle odpracovaných hodin) téhož čtvrtletí, řešené společně s poptávkou bisekcí, s dolní mezí. Nebo sazbu řídí uživatel posuvníkem od zvoleného čtvrtletí dál.
+5. **Výroba a platby:**
+   - Firmy vyrábějí, co se prodá. Hrubou výrobu dává Leontiefova iterace přes dodavatele a hodiny pracovníků z ní vycházejí.
+   - Stát vybírá daň 25 % ze mzdy, vyplácí transfery a dávky za chybějící hodiny (automatický stabilizátor, výchozí 50 % ušlé mzdy).
+   - Banka bere úrok z úvěrů (sazba + 2 p. b.) a platí úrok z vkladů (sazba − 0,5 p. b.).
+   - Firmy vyplácejí zisk a čtvrtinu odchylky hotovosti od cílového provozního úvěru, banka svou marži. Dividendy dostávají vyhlazující domácnosti.
+   - Fiskální pravidlo upravuje transfery, dokud se rozpočet nevyrovná, a stlačuje dluh.
+   - V otevřené ekonomice kurz určuje UIP s regresivními očekáváními jako v hybridním otevřeném modelu, dovozní ceny dobíhají kurz rychlostí ψ a vývoz reaguje na zahraniční poptávku a reálný kurz.
+
+- **Peníze se nikam neztrácejí:** každá platba odepíše částku z jednoho účtu a připíše ji na jiný (domácnosti, firmy, banka, stát, zahraničí). Součet všech účtů je tedy konstantní (stock-flow consistency, Godley & Lavoie). Test to ověřuje v každém čtvrtletí a UI to zobrazuje.
+- **Ustálený stav:** výchozí příjmy, zisky, transfery a hotovost se najdou iterací, aby každá domácnost utrácela přesně svůj příjem. Pak běží 60 čtvrtletí „zahřátí“ (burn-in), během kterého se agenti usadí. Bez šoků zůstává mezera v průměru do ±0,1 % a inflace do ±0,3 p. b. od cíle (náhodný šum agentů).
+- **Odezva na šok** = rozdíl proti stejné ekonomice bez šoku se stejnými náhodnými čísly (common random numbers). Tím se odfiltruje náhoda a zbude účinek šoku. Zahřátý svět a běh bez šoku se ukládají do mezipaměti, výpočet trvá desítky milisekund.
+- **Srovnání s tříčlenným modelem:** hybridní režim (očekávání agentů jsou adaptivní) s odpovídající kalibrací σ = σ·(1 − podíl domácností od výplaty k výplatě) a κ ≈ θ·ζ (výchozí 0,1). **Shoda je kvalitativní:** stejný směr a podobné načasování odezev, ale jiná velikost a perzistence. Agenti se zotavují rychleji a mají šum. V UI je to výslovně uvedeno.
+- **Vizualizace (canvas 2D):**
+  - Domácnosti jsou tečky ve skupinách kolem firmy, kde pracují, a jsou obarvené podle toho, zda utrácejí víc, než vydělají, nebo spoří. Domácnosti od výplaty k výplatě mají tmavý okraj.
+  - Firmy jsou kruhy na prstenci, velikost odpovídá výrobě. Při změně ceny zablesknou (teplá barva = zdražení, studená = zlevnění).
+  - Banka je uprostřed, ČNB nad ní, stát pod ní, zahraničí vpravo nahoře.
+  - Platby čtvrtletí jsou čáry s tloušťkou podle částky a po nich putují peníze. Platby institucím jsou sečtené za skupinu domácností jedné firmy.
+  - Druhy toků lze vypínat v legendě. Najetí na domácnost nebo firmu zvýrazní jen její platby a ukáže detaily.
+  - Statická vrstva se kreslí jednou za čtvrtletí, každý snímek přidává jen pohyb a záblesky. Při `prefers-reduced-motion` se nic nepohybuje.
+- **Časová osa** je společná pro plátno i grafy (přehrát, krokovat, posouvat). Grafy jsou stejné jako v laboratoři: mezera, inflace, sazba, reálná vs. přirozená sazba a v otevřené ekonomice kurz.
+
 ### Ověření
 
-Unit testy (`npm test`, celkem 145):
+Unit testy (`npm test`, celkem 160):
 
 - dosazení řešení do rovnic dá rezidua < 1e-9 pro všechny typy šoků, oba režimy, dolní mez, forward guidance, zpoždění a diskontování;
 - metoda dokonalého předvídání konverguje k analytickému řešení neurčitými koeficienty;
@@ -187,7 +223,9 @@ Unit testy (`npm test`, celkem 145):
 - otevřená ekonomika, znaménka: zahraniční recese snižuje výstup i domácí inflaci a oslabuje korunu; šok prémie a vyšší zahraniční sazba korunu oslabí a zvednou CPI; zpřísnění korunu posílí a CPI reaguje rychleji než v uzavřené ekonomice; bez šoků ustálený stav;
 - otevřená ekonomika, mez a závazek: sazba nikdy pod mezí a koruna nikdy pod hranicí (60 náhodných kalibrací × 2 režimy), intervence jen jedním směrem a jen přesně na hranici, závazek v racionálním režimu odvrací deflaci; determinace (výchozí ano, pasivní pravidlo ne, bez obchodu shodně s uzavřeným modelem na 300 kalibracích); rozklad a šipky čtyř uzlů;
 - hra v otevřené ekonomice: opakovatelnost, domácí šoky shodné s uzavřenou hrou, kurz viditelný přesně, hra = `solveOpenHybrid` s hráčovými sazbami, autopilot = `solveOpenHybrid` s pravidlem, pravidlo na datech je stabilní (žádné odvolání na 40 seedech), vyšší sazba posílí korunu ve stejném čtvrtletí;
-- uzavřené hry se stejným seedem dávají přesně stejné šoky jako ve fázi 2 (ověřeno proti commitu fáze 2).
+- uzavřené hry se stejným seedem dávají přesně stejné šoky jako ve fázi 2 (ověřeno proti commitu fáze 2);
+- agenti: struktura (zaměstnavatelé, podíl domácností od výplaty k výplatě, dodavatelé); součet všech účtů se nemění v uzavřené i otevřené ekonomice i s ruční sazbou; výchozí stav je ustálený; stejný seed = stejná ekonomika; bez šoků zůstává ekonomika u ustáleného stavu (4 konfigurace × 2 ekonomiky); podíl firem měnících cenu odpovídá θ; zůstatky domácností se mění o příjem minus útratu;
+- agenti, chování: poptávkový propad snižuje výstup, inflaci i sazbu; nákladový šok zvedá inflaci a snižuje výstup; zpřísnění snižuje výstup i inflaci; v otevřené ekonomice šok prémie oslabí korunu a zvedne inflaci a zahraniční recese snižuje výstup; sazba nikdy pod mezí, ruční sazba se dodrží; domácnosti od výplaty k výplatě zesilují poptávkový šok oproti tříčlennému modelu; směr odezev se shoduje s tříčlenným modelem.
 
 UI navíc u každého běhu zobrazí použitou metodu a maximální reziduum.
 
@@ -217,3 +255,7 @@ Každý běh lze spustit racionálně, hybridně, nebo v obou režimech v jednom
 - Schmitt-Grohé, S., Uribe, M. (2003). Closing Small Open Economy Models. *Journal of International Economics* 61(1).
 - Berg, A., Karam, P., Laxton, D. (2006). Practical Model-Based Monetary Policy Analysis: A How-To Guide. IMF Working Paper 06/81.
 - Franta, M., Holub, T., Král, P., Kubicová, I., Šmídková, K., Vašíček, B. (2014). The Exchange Rate as an Instrument at Zero Interest Rates: The Case of the Czech Republic. ČNB Research and Policy Notes 3/2014.
+- Calvo, G. (1983). Staggered Prices in a Utility-Maximizing Framework. *Journal of Monetary Economics* 12(3).
+- Kaplan, G., Moll, B., Violante, G. L. (2018). Monetary Policy According to HANK. *American Economic Review* 108(3).
+- Bilbiie, F. O. (2008). Limited Asset Markets Participation, Monetary Policy and (Inverted) Aggregate Demand Logic. *Journal of Economic Theory* 140(1).
+- Godley, W., Lavoie, M. (2007). *Monetary Economics: An Integrated Approach to Credit, Money, Income, Production and Wealth.* Palgrave Macmillan.

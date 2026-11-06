@@ -10,6 +10,7 @@ import { createChart } from './chart.js';
 import { createTimeline } from './timeline.js';
 import { createLivePanel } from './live.js';
 import { createGameView } from './game.js';
+import { createAgentsView } from './agents.js';
 import { loadLocale, t, fmt, getLang, applyStatic, eqRefs, LANGS } from './i18n.js';
 
 const MAX_PINS = 4;
@@ -47,6 +48,8 @@ let lastResults = [];
 let timeline = null;
 let live = null;
 let gameView = null;
+let agentsView = null;
+const TABS = ['lab', 'game', 'agents'];
 
 // ---------------------------------------------------------------------------
 // Persistence of per-viewer conveniences (language only).
@@ -418,7 +421,7 @@ function renderEquations() {
     <p class="eq-levels">${t(isOpen() ? 'equations.levelsOpen' : 'equations.levels')}</p>`;
 }
 
-const activeView = () => document.getElementById(state.tab === 'game' ? 'view-game' : 'view-lab');
+const activeView = () => document.getElementById(`view-${state.tab}`);
 
 function highlightEq(id, on) {
   for (const row of activeView().querySelectorAll('[data-eqrow]')) {
@@ -691,15 +694,16 @@ const timelineTexts = () => ({
 // Tabs
 
 function showTab(tab, push = true) {
-  state.tab = tab === 'game' ? 'game' : 'lab';
+  state.tab = TABS.includes(tab) ? tab : 'lab';
   for (const b of document.querySelectorAll('[data-tab]')) b.setAttribute('aria-selected', String(b.dataset.tab === state.tab));
-  $('#view-lab').hidden = state.tab !== 'lab';
-  $('#view-game').hidden = state.tab !== 'game';
+  for (const name of TABS) $(`#view-${name}`).hidden = state.tab !== name;
   if (state.tab !== 'lab') timeline.stop();
+  agentsView.setActive(state.tab === 'agents');
   if (push) {
-    try { history.replaceState(null, '', state.tab === 'game' ? '#game' : '#lab'); } catch { /* not allowed */ }
+    try { history.replaceState(null, '', `#${state.tab}`); } catch { /* not allowed */ }
   }
 }
+const tabFromHash = () => TABS.find((x) => location.hash === `#${x}`) || 'lab';
 
 // ---------------------------------------------------------------------------
 // Pins
@@ -761,6 +765,7 @@ async function setLanguage(l) {
   renderControls();
   refresh();
   gameView.render();
+  agentsView.render();
 }
 
 function bindGlobal() {
@@ -805,11 +810,12 @@ function bindGlobal() {
   });
   $('.tabs').addEventListener('keydown', (ev) => {
     if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
-    const next = state.tab === 'lab' ? 'game' : 'lab';
+    const k = TABS.indexOf(state.tab) + (ev.key === 'ArrowRight' ? 1 : -1);
+    const next = TABS[(k + TABS.length) % TABS.length];
     showTab(next);
     document.getElementById(`tab-${next}`).focus();
   });
-  window.addEventListener('hashchange', () => showTab(location.hash === '#game' ? 'game' : 'lab', false));
+  window.addEventListener('hashchange', () => showTab(tabFromHash(), false));
   document.addEventListener('keydown', (ev) => {
     if (state.tab === 'game' && gameView.handleKey(ev)) ev.preventDefault();
   });
@@ -831,12 +837,14 @@ async function main() {
   });
   gameView = createGameView($('#view-game'), { equationsHtml: (economy) => equationsHtml('hybrid', 1, economy) });
   gameView.setTimelineTexts(timelineTexts);
+  agentsView = createAgentsView($('#view-agents'), { timelineTexts });
   bindControls();
   bindGlobal();
   renderControls();
   refresh();
   gameView.render();
-  showTab(location.hash === '#game' ? 'game' : 'lab', false);
+  agentsView.render();
+  showTab(tabFromHash(), false);
 }
 
 main();
